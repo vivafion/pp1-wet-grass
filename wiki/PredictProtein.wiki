@@ -1,0 +1,163 @@
+Notes about PredictProtein and it's output.
+= Introduction =
+
+Add your content here.
+
+
+= Files output by PP =
+
+*.asp:
+no idea what conformational switches are
+
+*.blastPsi80Rdb:
+contains seqid% and seqsim%, might be usefull if we have to do redundancy reduction ourselves
+
+*.blastPsiAli:
+sequence alignment, not sure if that can help us
+
+*.blastPsiMat:
+position specific AA substitution matrix
+
+*.blastPsiOutTmp:
+blast output
+
+*.blastPsiRdb:
+whats the fidderence between this and blastPsi80Rdb? runs on big_80?
+
+*query.blastpSwissM8:
+tab separated blast output against swissprot?
+
+*query.chk:
+binary file? proberbly not of interest to us
+
+*query.clustalngz:
+same
+
+*query.coils:
+prediction of coiled region, might be usefull
+
+*query.coils_raw:
+same thin in non human readable format?
+
+*query.disis:
+no idea
+
+*query.disulfinder:
+htmp file, prediction of disulfide bonds?, proberbly connected to .disis? not sure if this will help us
+
+*query.fasta:
+query sequence in blocks of 10
+
+*query.globe:
+prediction of protein globularity? no idea if this can help us
+
+*query.hmm2pfam:
+hmm2pfam alignment contains helix, strand, coil information?
+
+*query.hmm3pfam:
+same with hmmer3
+
+*query.hmm3pfamDomTbl:
+more information about hmm3 alignment
+
+*query.hmm3pfamTbl:
+even more information?
+
+*query.hssp:
+"HOMOLOGY DERIVED SECONDARY STRUCTURE OF PROTEINS" sounds usefull, no idea how to make sense of the data though
+
+*query.hssp80:
+same thing on big_80 i guess
+
+*query.hsspPsiFil:
+same thing again?
+
+*query.in:
+query sequence again, fasta format
+
+*query.isis:
+prediction of protein-protein interaction
+
+*query.loctreeAnimal:
+prediction of protein location, might be useful
+
+*query.loctreeAnimalTxt:
+same thing
+
+*query.loctreePlant:
+same thing
+
+*query.loctreePlantTxt:
+same thing
+
+*query.loctreeProka:
+same thing
+
+*query.loctreeProkaTxt:
+same thing
+
+*query.mdisorder:
+prediction of disordered regions in a protein, should be helpfull, when a reagion is disorderd it cant be a helix :P
+
+*query.nls:
+html, prediction of location based on nuclear localization signal, might be usefull but i think rost said it only works for core proteins or something, worth checking out
+
+*query.nlsSum:
+same, i guess?
+
+*query.nors
+html, disorder prediction, might be included in mdisorder
+
+*query.norsnet
+same thin ix tab format?
+
+*query.phdpred:
+prediction of transmembrane helix and topology, sound like our task, dont understand output yet
+
+*query.phdRdb:
+same thing tab separated, rightmost colum holds prediction o = outside, T = transmembrane, i = inside. Should be usefull
+
+*query.prof1Rdb:
+secondary structure prediction, might help
+
+*query.profAscii:
+same thing?
+
+*query.profbval:
+no idea
+
+*query.profRdb
+same thin again?
+
+*query.proftmb:
+predicts wheather or not a protein is transmembrane, should be usefull
+
+*query.proftmbdat:
+same thing with pre information
+
+*query.prosite:
+html,searches query in prosite, finds domains, maybe usefull
+
+*query.psic:
+no idea, looks like psi blast profile?
+
+*query.safBlastPsi:
+simple alignment
+
+*query.safBlastPsi80:
+simple alignment big80
+
+*query.segNorm:
+no idea, query with xx inside
+
+*query.segNormGCG:
+no idea, querry with ?
+
+*query.segGCG:
+no idea, querry with ?
+
+*query.sumNors:
+summary file i quess?
+
+*query.tmhmm:
+trans membrane helix prediction, proberbly usefull
