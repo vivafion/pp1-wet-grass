@@ -1,3 +1,4 @@
+#labels Featured
 Notes about PredictProtein and it's output.
 = Introduction =
 
