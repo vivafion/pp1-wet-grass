@@ -38,6 +38,7 @@ public class svm_toy extends Applet {
 	static final String DEFAULT_PARAM="-t 2 -c 100";
 	int XLEN;
 	int YLEN;
+	int test;
 
 	// off-screen buffer
 
