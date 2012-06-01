@@ -1,0 +1,49 @@
+#summary One-sentence summary of this page.
+
+= Introduction =
+General workflow idea and used scripts.
+
+
+= Details =
+
+Our aim is to predict transmembrane states of positions from a given Aminoacid sequence (primary sequence).
+
+To achieve this we want to use a Support Vector Machine (SVM).
+
+Trained on available data we will try to extract the best features to predict transmembrane states, and in further tries to predict the topology of the protein (meaning if a part of the given transmembrane protein is inside or outside of the cell.
+
+The creation of the dataset has been done with the following tools:
+
+a redundancy reduced testset of proteins were predicted via PredicProtein
+
+scriptcall:
+/usr/bin/predictprotein --seqfile /mnt/opt/data/pp1_12_exercise/dataset/fasta/$filename --target=all --target=optional --output-dir /mnt/opt/data/pp1_12_exercise/groups/wet_grass/VadimPPOutput/$filename/ --nouse-cache --bigblastdb=/var/tmp/rost_db/data/big/big --big80blastdb=/var/tmp/rost_db/data/big/big_80 --pfam2db=/var/tmp/rost_db/data/pfam_legacy/Pfam_ls --pfam3db=/var/tmp/rost_db/data/pfam/Pfam-A.hmm --prositeconvdat=/var/tmp/rost_db/data/prosite/prosite_convert.dat --prositedat=/var/tmp/rost_db/data/prosite/prosite.dat --swissblastdb=/var/tmp/rost_db/data/swissprot/uniprot_sprot
+
+$filename denotes the name of the file containing the sequence in Fasta format
+--output-dir is the argument to say where the output will be stored
+
+This gives several outputfiles for each predicted protein, containing predictions for secondary structure, binding sites etc.
+
+With a wrapper,
+
+scriptcall:
+ python /mnt/opt/data/pp1_12_exercise/scripts/pp2features/pp2features.py -a prot.arff --arff-file solOutNoTMS.arff --csv-file solOutNoTMS.csv -p /mnt/opt/data/pp1_12_exercise/dataset/solOutput/ -f sampleConfig.cfg -e error.txt 
+
+the wrapper looks inside the -p given path for subfolders
+for each subfolder that contains the -a given file features are extracted
+the to be extracted features are given by a config file (-f argument)
+
+we generate an .arff file containing the desired features.
+
+After training on these features we will use the SVM as followed:
+
+We are given a sequence seqA for which we shall predict the states of each position.
+
+To use out SVM we (without the transmembrane state) need the same informations as we used to train it. Therefore we use PredicProtein on seqA
+
+
+To use the wrapper we need -a corresponding files to make it work, consisting of an empty file/denoted as "?" for each position (to be found out).
+
+afterwards we get an .arff file with a vector for each position, on which the SVM predicts the state.
+
+After we got all predictions we want to use postprocessing, to eliminate errors in our prediction.
