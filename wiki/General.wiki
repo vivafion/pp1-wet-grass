@@ -1,4 +1,4 @@
-#summary One-sentence summary of this page.
+#summary Some information about workflow and idea of our program
 
 = Introduction =
 General workflow idea and used scripts.
