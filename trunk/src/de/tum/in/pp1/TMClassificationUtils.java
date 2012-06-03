@@ -13,6 +13,7 @@ import weka.filters.Filter;
 import weka.filters.supervised.attribute.AttributeSelection;
 import weka.filters.supervised.instance.Resample;
 import weka.filters.unsupervised.attribute.Remove;
+import weka.filters.unsupervised.instance.Randomize;
 
 public class TMClassificationUtils {
 	
@@ -29,11 +30,18 @@ public class TMClassificationUtils {
 	 		data = loadDataset();
 			
 			//filtering
-			data = resampleDataset(data);
-			//we don't need the first string attribute
-			data = removeFirstAttribute(data);
+	 		//we don't need the first string attribute
+	 		data = removeFirstAttribute(data);
+			
+	 		//create subsample of the dataset
+	 		//data = resampleDataset(data);
+	 		
+	 		//randomly shuffle the dataset
+			data = randomizeDataset(data);
+			
+			
 			// feature reduction
-			data = filterImportantAttributes(data);
+			//data = filterImportantAttributes(data);
 			
 			
 			 //create new instance of SVM
@@ -73,6 +81,16 @@ public class TMClassificationUtils {
 		sampler.setRandomSeed((int)System.currentTimeMillis());
 		sampler.setSampleSizePercent(SUBSAMPLE_SIZE);
 		sampler.setBiasToUniformClass(0.0);
+		sampler.setNoReplacement(true);
+		sampler.setInputFormat(data);
+		data = Resample.useFilter(data, sampler);
+		return data;
+	}
+	
+	public static Instances randomizeDataset(Instances data) throws Exception {
+		System.out.println("\n Shuffle dataset...");
+		Randomize sampler = new Randomize();
+		sampler.setRandomSeed((int)System.currentTimeMillis());
 		sampler.setInputFormat(data);
 		data = Resample.useFilter(data, sampler);
 		return data;
