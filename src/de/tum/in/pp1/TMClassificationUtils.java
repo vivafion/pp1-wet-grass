@@ -22,6 +22,11 @@ public class TMClassificationUtils {
 	private static final double SPLIT_PERCENTAGE = 66.0;
 	private static final double SUBSAMPLE_SIZE = 10.0; // percent
 	
+	//Sets the bias towards a uniform class. A value of 0 leaves the class distribution as-is, 
+	//a value of 1 ensures the class distributions are uniform in the output data.
+	private static final double BIAS_TO_UNIFORM_CLASS = 0.0;
+	
+	
 	public static void main(String[] args) {
 		Instances data = null;
 	 	try {
@@ -80,7 +85,7 @@ public class TMClassificationUtils {
 		Resample sampler = new Resample();
 		sampler.setRandomSeed((int)System.currentTimeMillis());
 		sampler.setSampleSizePercent(SUBSAMPLE_SIZE);
-		sampler.setBiasToUniformClass(0.0);
+		sampler.setBiasToUniformClass(BIAS_TO_UNIFORM_CLASS);
 		sampler.setNoReplacement(true);
 		sampler.setInputFormat(data);
 		data = Resample.useFilter(data, sampler);
