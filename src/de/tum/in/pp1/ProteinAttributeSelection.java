@@ -29,9 +29,7 @@ public class ProteinAttributeSelection {
 			
 			System.out.println("\n Ranking protein attributes...");
 			wekaattrsel.SelectAttributes(data);
-			
 			// obtain the attribute indices that were selected
-			int[] indices = wekaattrsel.selectedAttributes();
 			System.out.println(wekaattrsel.toResultsString());
 			
 			

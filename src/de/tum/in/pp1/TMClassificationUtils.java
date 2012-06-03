@@ -3,11 +3,14 @@ package de.tum.in.pp1;
 import java.io.File;
 import java.io.IOException;
 
+import weka.attributeSelection.CfsSubsetEval;
+import weka.attributeSelection.GreedyStepwise;
 import weka.classifiers.Evaluation;
 import weka.core.Debug.Random;
 import weka.core.Instances;
 import weka.core.converters.ArffLoader;
 import weka.filters.Filter;
+import weka.filters.supervised.attribute.AttributeSelection;
 import weka.filters.supervised.instance.Resample;
 import weka.filters.unsupervised.attribute.Remove;
 
@@ -29,6 +32,8 @@ public class TMClassificationUtils {
 			data = resampleDataset(data);
 			//we don't need the first string attribute
 			data = removeFirstAttribute(data);
+			// feature reduction
+			data = filterImportantAttributes(data);
 			
 			
 			 //create new instance of SVM
@@ -71,6 +76,22 @@ public class TMClassificationUtils {
 		sampler.setInputFormat(data);
 		data = Resample.useFilter(data, sampler);
 		return data;
+	}
+	
+	public static Instances filterImportantAttributes(Instances data) throws Exception {
+		System.out.println("\n Select important attributes...");
+		AttributeSelection filter = new AttributeSelection();
+		  CfsSubsetEval eval = new CfsSubsetEval();
+		  GreedyStepwise search = new GreedyStepwise();
+
+		filter.setEvaluator(eval);
+		filter.setSearch(search);
+		filter.setInputFormat(data);
+
+		// generate new data
+		Instances newData = Filter.useFilter(data, filter);
+		System.out.println("\n Number of selected attributes: " + newData.numAttributes()); 
+		return newData;
 	}
 	
 	public static Instances removeFirstAttribute(Instances data) throws Exception {
