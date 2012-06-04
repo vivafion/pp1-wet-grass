@@ -10,7 +10,7 @@ public class GeneratePredictMeArff {
 
 	}
 	
-	/**Added by Aparna on 04/06/2012 */
+	
 	public void executeBachScript() {
 		try {
 			String cmd = "ls -l"; // this is the command to execute in the Unix shell
@@ -57,6 +57,7 @@ public class GeneratePredictMeArff {
         }
 	}
 	
+	/**Added by Aparna on 04/06/2012 */
 	public void executePerlScript() {
 		try
         {
