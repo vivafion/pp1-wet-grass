@@ -10,6 +10,7 @@ public class GeneratePredictMeArff {
 
 	}
 	
+	/**Added by Aparna on 04/06/2012 */
 	public void executeBachScript() {
 		try {
 			String cmd = "ls -l"; // this is the command to execute in the Unix shell
@@ -53,6 +54,28 @@ public class GeneratePredictMeArff {
 		String cause = e.getMessage();
 		if (cause.equals("python: not found"))
 			System.out.println("No python interpreter found.");
+        }
+	}
+	
+	public void executePerlScript() {
+		try
+        {
+           Process p = Runtime.getRuntime().exec("perl script.pl");
+            BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            p.waitFor();
+            String line = "";
+            while (br.ready())
+                System.out.println(br.readLine());
+        }
+		catch(IOException e)
+        {
+        System.out.println(e);
+        }
+        catch (Exception e)
+        {
+		String cause = e.getMessage();
+		if (cause.equals("perl: not found"))
+			System.out.println("No perl interpreter found.");
         }
 	}
 }
