@@ -104,9 +104,9 @@ public class TMClassificationUtils {
 	public static Instances filterImportantAttributes(Instances data) throws Exception {
 		System.out.println("\n Select important attributes...");
 		AttributeSelection filter = new AttributeSelection();
-		  CfsSubsetEval eval = new CfsSubsetEval();
-		  GreedyStepwise search = new GreedyStepwise();
-
+		CfsSubsetEval eval = new CfsSubsetEval();
+		GreedyStepwise search = new GreedyStepwise();
+		search.setSearchBackwards(true);//Added by Aparna on 04/06/2012  
 		filter.setEvaluator(eval);
 		filter.setSearch(search);
 		filter.setInputFormat(data);
