@@ -11,7 +11,7 @@ public class GeneratePredictMeArff {
 	}
 	
 	
-	public void executeBachScript() {
+	public void executeBashScript() {
 		try {
 			String cmd = "ls -l"; // this is the command to execute in the Unix shell
 			// create a process for the shell
