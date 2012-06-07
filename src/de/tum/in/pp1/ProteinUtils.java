@@ -23,16 +23,20 @@ public class ProteinUtils {
 	/**
 	 * Load dataset
 	 * @param datasetPath
+	 * @param containsClassLabel true if there is a class attribute (training set) or false when the class label is not provided (testing set)
 	 * @return
 	 */
-	public static Instances loadDataset(String datasetPath) throws IOException {
+	public static Instances loadDataset(String datasetPath, boolean containsClassLabel) throws IOException {
 		System.out.println("\n Loading dataset...");
 		Instances data;
 		ArffLoader loader = new ArffLoader();
 		loader.setFile(new File(datasetPath));
 		data = loader.getDataSet();
-		if (data.classIndex() == -1) {
-			data.setClassIndex(data.numAttributes() - 1);
+		
+		if (containsClassLabel) {
+			if (data.classIndex() == -1) {
+				data.setClassIndex(data.numAttributes() - 1);
+			}
 		}
 		return data;
 	}

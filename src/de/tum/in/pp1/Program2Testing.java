@@ -61,7 +61,7 @@ public class Program2Testing {
 			weka.classifiers.functions.LibSVM svmScheme = loadModel(modelPath);
 
 			//Read testing dataset
-			testingData = ProteinUtils.loadDataset(testingSetPath);
+			testingData = ProteinUtils.loadDataset(testingSetPath, false);
 			
 			//keep the first attribute - ids and positions of the amino acids
 			idAndPositionAtt = testingData.attribute(0);

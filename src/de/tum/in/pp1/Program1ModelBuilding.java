@@ -55,7 +55,7 @@ public class Program1ModelBuilding {
 	 	try {
 	 		
 	 		//Load the Protein dataset
-	 		data = ProteinUtils.loadDataset(trainingSetPath);
+	 		data = ProteinUtils.loadDataset(trainingSetPath, true);
 			
 			//filtering
 	 		//we don't need the first string attribute
