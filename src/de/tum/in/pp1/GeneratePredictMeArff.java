@@ -7,7 +7,8 @@ import java.io.InputStreamReader;
 
 public class GeneratePredictMeArff {
 	public static void main(String[] args) {
-
+    String path = "/mnt/opt/data/pp1_12_exercise/groups/wet_grass/executeScript.sh";
+    executePythonScript(path);
 	}
 	
 	
@@ -37,11 +38,11 @@ public class GeneratePredictMeArff {
 		}
 	}
 	
-	public void executePythonScript() {
+	public static void executePythonScript(String path) {
 		try
         {
             Runtime r = Runtime.getRuntime();
-            Process p = r.exec("python foo.py");
+            Process p = r.exec(path);
             BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
             p.waitFor();
             String line = "";
@@ -57,7 +58,7 @@ public class GeneratePredictMeArff {
         }
 	}
 	
-	/**Added by Aparna on 04/06/2012 */
+	
 	public void executePerlScript() {
 		try
         {
