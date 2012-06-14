@@ -84,18 +84,47 @@ public class ProteinUtils {
 	/**
 	 * This method should evaluate the predictions of the aminoacids and do some post-processing to confirm that the protein is TM
 	 * For example, it might check whether there are 17 consecutive TM amino-acids ??? 
-	 * @param predictions list of the predicted classes for the testing set: value 1.0 for TM and 0.1 for Non-TM amino acid.
+	 * @param predictions list of the predicted classes for the testing set: value 0.0 for TM and 1.0 for Non-TM amino acid.
 	 * @param idsAndPosition the "ID_pos" attribute, containing the protein id and residue position for each 
 	 * prediction given with the first argument respectively 
-	 * @return a map containing of key/value pairs where the key is the protein id and the value is the class (TM or non-TM).
+	 * @return a map containing of key/value pairs where the key is the protein id and the value is a string representing whether or not each AA is TM.
 	 */
-	public static Map<String, String> evaluatePredictions(List<Double> predictions, Attribute idsAndPosition) {
+	public static Map<String, String> postProcessPredictions(List<Double> predictions, Attribute idsAndPosition) {
 		//TODO: this method is not completely implemented!
 		Map<String,String> proteins2Class = new LinkedHashMap<String,String>();
-		int pos = 0;
-		for (Double prediction : predictions) {
-			proteins2Class.put(idsAndPosition.value(pos), prediction.toString());
-			pos++;
+
+		String currentSequence = idsAndPosition.value(0).substring(0, idsAndPosition.value(0).lastIndexOf("_"));
+		
+		for (int i = 0; i < predictions.size(); i++) {
+			if (!currentSequence.equals(idsAndPosition.value(i).substring(0, idsAndPosition.value(i).lastIndexOf("_")))) {
+				currentSequence = idsAndPosition.value(i).substring(0, idsAndPosition.value(i).lastIndexOf("_"));
+			}
+			while (currentSequence.equals(idsAndPosition.value(i).substring(0, idsAndPosition.value(i).lastIndexOf("_")))){
+				String tmp = proteins2Class.get(currentSequence);
+				if (predictions.get(i) == 0.0){
+					if (tmp == null){
+						proteins2Class.put(currentSequence, "+");
+					}
+					else{
+						proteins2Class.put(currentSequence, tmp + "+");
+					}
+				}
+				else if (predictions.get(i) == 1.0){
+					if (tmp == null){
+						proteins2Class.put(currentSequence, "-");
+					}
+						else{
+						proteins2Class.put(currentSequence, tmp + "-");
+					}
+				}
+				
+				if (i+1 < idsAndPosition.numValues())
+					i++;
+				else
+					i++;
+					break;
+			}
+			i--;
 		}
 		return proteins2Class;
 	}
