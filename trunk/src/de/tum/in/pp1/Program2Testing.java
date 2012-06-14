@@ -61,7 +61,8 @@ public class Program2Testing {
 			weka.classifiers.functions.LibSVM svmScheme = loadModel(modelPath);
 
 			//Read testing dataset
-			testingData = ProteinUtils.loadDataset(testingSetPath, false);
+			//testingData = ProteinUtils.loadDataset(testingSetPath, false);
+			testingData = ProteinUtils.loadDataset(testingSetPath, true);
 			
 			//keep the first attribute - ids and positions of the amino acids
 			idAndPositionAtt = testingData.attribute(0);
@@ -73,7 +74,7 @@ public class Program2Testing {
 			predictions = predictTestingSet(testingData, svmScheme);
 		
 			
-			Map<String,String> proteinId2Class = ProteinUtils.evaluatePredictions(predictions, idAndPositionAtt);
+			Map<String,String> proteinId2Class = ProteinUtils.postProcessPredictions(predictions, idAndPositionAtt);
 			
 			//save the predictions in file
 			SerializationHelper.write(resultOutputPath, proteinId2Class);
