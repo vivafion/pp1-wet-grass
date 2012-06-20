@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import weka.core.Attribute;
 import weka.core.Instances;
@@ -95,6 +96,7 @@ public class ProteinUtils {
 
 		String currentSequence = idsAndPosition.value(0).substring(0, idsAndPosition.value(0).lastIndexOf("_"));
 		
+		// build prediction string from single position predictions
 		for (int i = 0; i < predictions.size(); i++) {
 			if (!currentSequence.equals(idsAndPosition.value(i).substring(0, idsAndPosition.value(i).lastIndexOf("_")))) {
 				currentSequence = idsAndPosition.value(i).substring(0, idsAndPosition.value(i).lastIndexOf("_"));
@@ -125,6 +127,32 @@ public class ProteinUtils {
 					break;
 			}
 			i--;
+		}
+		
+		// finds starts and ends for each predicted TM helix
+		Map<String,Vector<int[]>> TMpositions = new LinkedHashMap<String,Vector<int[]>>();
+		for (String protein : proteins2Class.keySet()){
+			Boolean inTM = false;
+			TMpositions.put(protein, new Vector<int[]>());
+			int[] startEndPair = new int[2];
+			
+			for (int i = 0; i < proteins2Class.get(protein).length(); i++){
+				if (inTM == false && proteins2Class.get(protein).charAt(i)=='-'){
+				}
+				else if (inTM == false && proteins2Class.get(protein).charAt(i)=='+'){
+					startEndPair[0] = i;
+					inTM = true;
+				}
+				else if (inTM == true && proteins2Class.get(protein).charAt(i)=='+'){
+				}
+				else if (inTM == true && proteins2Class.get(protein).charAt(i)=='-'){
+					startEndPair[1] = i-1;
+					inTM = false;
+					System.out.println ("TM start: "+ startEndPair[0] + " TM end: " + startEndPair[1]);
+					TMpositions.get(protein).add(startEndPair);
+				}
+				
+			}
 		}
 		return proteins2Class;
 	}
