@@ -27,7 +27,9 @@ public class GeneratePredictMeArff {
 		String predictProteinOutput = "";
 		String impOrSolFlag = "";
 		String trainingOrTestsetFlag = "";
-		String outputArffPath = "";	
+		String outputArffPath = ""; 
+    String PP2FeatureOutputFileName = "";
+		String PP2FeatureOutputFileNameTestset = "";  
 		String testsetFastaPath = "";
 		String predictProteinTestsetOutput = "";
 		String testsetPath = "";
@@ -85,6 +87,8 @@ public class GeneratePredictMeArff {
 				System.out.println("script2 executed...");
 				
 				//call script3: pp2features.py to run PP2Features and generate output arff file
+        datasetPath = "-p " +datasetPath;
+				outputArffPath = "--arff-file "+outputArffPath+PP2FeatureOutputFileName ;
 				path3 = "python " +path3 +" "+datasetPath+" "+outputArffPath;
 				//Runtime.getRuntime().exec(path3);
 				executeScript(path3);
@@ -107,6 +111,8 @@ public class GeneratePredictMeArff {
 				System.out.println("script2 executed for testing set...");
 				
 				//call script3: pp2features.py to run PP2Features and generate output arff file
+        testsetPath = "-p " +testsetPath;
+				testsetOutputArffPath = "--arff-file "+testsetOutputArffPath+PP2FeatureOutputFileNameTestset ;     
 				path6 = "python " +path3 +" "+testsetPath+" "+testsetOutputArffPath;
 				//Runtime.getRuntime().exec(path6);
 				executeScript(path6);
