@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Vector;
 
@@ -90,7 +91,7 @@ public class ProteinUtils {
 	 * prediction given with the first argument respectively 
 	 * @return a map containing of key/value pairs where the key is the protein id and the value is a string representing whether or not each AA is TM.
 	 */
-	public static Map<String, String> postProcessPredictions(List<Double> predictions, Attribute idsAndPosition) {
+	public static Map<String, String> postProcessPredictions(List<Double> predictions, Attribute idsAndPosition, double[] classification) {
 		//TODO: this method is not completely implemented!
 		Map<String,String> proteins2Class = new LinkedHashMap<String,String>();
 
@@ -98,11 +99,15 @@ public class ProteinUtils {
 		
 		// build prediction string from single position predictions
 		for (int i = 0; i < predictions.size(); i++) {
+			// is this still the same protein?
 			if (!currentSequence.equals(idsAndPosition.value(i).substring(0, idsAndPosition.value(i).lastIndexOf("_")))) {
+				//no so change the key, to which the predictions are added
 				currentSequence = idsAndPosition.value(i).substring(0, idsAndPosition.value(i).lastIndexOf("_"));
 			}
+			//line up single predictions into a string
 			while (currentSequence.equals(idsAndPosition.value(i).substring(0, idsAndPosition.value(i).lastIndexOf("_")))){
 				String tmp = proteins2Class.get(currentSequence);
+				// 0.0 is equal to transmembrane, represented as +es in the string
 				if (predictions.get(i) == 0.0){
 					if (tmp == null){
 						proteins2Class.put(currentSequence, "+");
@@ -111,6 +116,7 @@ public class ProteinUtils {
 						proteins2Class.put(currentSequence, tmp + "+");
 					}
 				}
+				// 1.0 is equal to transmembrane, represented as -es in the string
 				else if (predictions.get(i) == 1.0){
 					if (tmp == null){
 						proteins2Class.put(currentSequence, "-");
@@ -119,7 +125,7 @@ public class ProteinUtils {
 						proteins2Class.put(currentSequence, tmp + "-");
 					}
 				}
-				
+				//if not at the end keep moving, else stop, horrible coding style :P
 				if (i+1 < idsAndPosition.numValues())
 					i++;
 				else
@@ -135,25 +141,127 @@ public class ProteinUtils {
 			Boolean inTM = false;
 			TMpositions.put(protein, new Vector<int[]>());
 			int[] startEndPair = new int[2];
-			
+			//detects starts end ends of consecutive TM predictions
 			for (int i = 0; i < proteins2Class.get(protein).length(); i++){
-				if (inTM == false && proteins2Class.get(protein).charAt(i)=='-'){
+				if (inTM == false){
+					if (proteins2Class.get(protein).charAt(i)=='-'){
+					}
+					else if ( proteins2Class.get(protein).charAt(i)=='+'){
+						startEndPair[0] = i;
+						inTM = true;
+					}
 				}
-				else if (inTM == false && proteins2Class.get(protein).charAt(i)=='+'){
-					startEndPair[0] = i;
-					inTM = true;
+				else{
+					if (proteins2Class.get(protein).charAt(i)=='+'){
+					}
+					else if (proteins2Class.get(protein).charAt(i)=='-'){
+						startEndPair[1] = i-1;
+						inTM = false;
+						//System.out.println ("TM start: "+ startEndPair[0] + " TM end: " + startEndPair[1]);
+						TMpositions.get(protein).add( startEndPair.clone() );
+					}
 				}
-				else if (inTM == true && proteins2Class.get(protein).charAt(i)=='+'){
+					
+			}			
+		}
+		
+		// For each predicted TM helix see if you can connect it to a prediction close by
+		// then check its size, if its below 10 remove it
+		for (String protein : TMpositions.keySet()){
+			ListIterator<int[]> itr = TMpositions.get(protein).listIterator();
+			while ( itr.hasNext()) {
+				int[] startStopPos = itr.next();
+				int curStart = startStopPos[0];
+				int curEnd = startStopPos[1];
+				//look to previous tm part
+				if (itr.hasPrevious()){
+					itr.previous();
+					if (itr.hasPrevious()){
+						int[] prev = itr.previous();
+						if (curStart - prev[1] <= 2){
+							curStart = prev[0];
+						}
+						itr.next();
+					}
+					itr.next();
 				}
-				else if (inTM == true && proteins2Class.get(protein).charAt(i)=='-'){
-					startEndPair[1] = i-1;
-					inTM = false;
-					System.out.println ("TM start: "+ startEndPair[0] + " TM end: " + startEndPair[1]);
-					TMpositions.get(protein).add(startEndPair);
+				//look to next tm part
+				if (itr.hasNext()){
+					int[] next = itr.next();
+					if (next[0] - curEnd <= 2){
+						curEnd = next[1];
+					}
+					itr.previous();
 				}
 				
+				// if below 16 residues, throw it out
+				if (curEnd - curStart < 16){
+					String tmp = proteins2Class.get(protein);
+					String start = tmp.substring(0,curStart);
+					String mid = "";
+					//build up new string with deleted prediction
+					for (int j = 0; j <= curEnd - curStart ; j++)
+						mid += "-";
+					String end = tmp.substring(curEnd+1, tmp.length());
+					//System.out.println("Old length: " + tmp.length());
+					//System.out.println(tmp);
+					//System.out.println(start+mid+end);
+					//System.out.println("New lenth:" + (start+mid+end).length());
+					proteins2Class.put(protein, start+mid+end);
+				}
+				//else keep it
+				else {
+					String tmp = proteins2Class.get(protein);
+					String start = tmp.substring(0,curStart);
+					String mid = "";
+					//build up neu string with combined section
+					for (int j = 0; j <= curEnd - curStart ; j++)
+						mid += "+";
+					String end = tmp.substring(curEnd+1, tmp.length());
+					//System.out.println("Old length: " + tmp.length());
+					//System.out.println(tmp);
+					//System.out.println(start+mid+end);
+					//System.out.println("New lenth:" + (start+mid+end).length());
+					proteins2Class.put(protein, start+mid+end);
+				}
+			}		
+		}
+		
+		// do simple evaluation
+		int i = 0;
+		int true_positives = 0;
+		int false_positives = 0;
+		int true_negatives = 0;
+		int false_negatives = 0;
+		
+		while (i < classification.length){
+			for (String protein : proteins2Class.keySet()){
+				char[] predictionArray = proteins2Class.get(protein).toCharArray();
+				for ( char c: predictionArray){
+					if (classification[i] == 0.0 && c == '+' ){
+						true_positives += 1;
+					}
+					else if (classification[i]== 0.0 && c == '-'){
+						false_negatives += 1;
+					}
+					else if (classification[i]== 1.0 && c == '-'){
+						true_negatives += 1;
+					}
+					else if (classification[i]== 1.0 && c == '+'){
+						false_positives += 1;
+					}
+					i++;
+				}
 			}
 		}
+		System.out.println("True TM " + true_positives);
+		System.out.println("False TM " + false_positives);
+		System.out.println("True nonTM " + true_negatives);
+		System.out.println("False nonTM " + false_negatives);
+
+		System.out.println("TM Precision " +(float)true_positives/(true_positives + false_positives));		
+		System.out.println("non TM Precision " +(float)true_negatives/(true_negatives + false_negatives));
+
 		return proteins2Class;
 	}
 	
