@@ -54,6 +54,7 @@ public class Program2Testing {
 		Instances testingData;
 		List<Double> predictions;
 		Attribute idAndPositionAtt;
+		double[] classification;
 		
 		try { 
 			
@@ -66,6 +67,7 @@ public class Program2Testing {
 			
 			//keep the first attribute - ids and positions of the amino acids
 			idAndPositionAtt = testingData.attribute(0);
+			classification = testingData.attributeToDoubleArray(testingData.numAttributes()-1);
 			
 			//we don't need the first string attribute for prediction
 			testingData = ProteinUtils.removeFirstAttribute(testingData);
@@ -74,7 +76,7 @@ public class Program2Testing {
 			predictions = predictTestingSet(testingData, svmScheme);
 		
 			
-			Map<String,String> proteinId2Class = ProteinUtils.postProcessPredictions(predictions, idAndPositionAtt);
+			Map<String,String> proteinId2Class = ProteinUtils.postProcessPredictions(predictions, idAndPositionAtt, classification);
 			
 			//save the predictions in file
 			SerializationHelper.write(resultOutputPath, proteinId2Class);
