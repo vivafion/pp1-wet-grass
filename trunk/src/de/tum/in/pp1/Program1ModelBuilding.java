@@ -59,7 +59,7 @@ public class Program1ModelBuilding {
 			
 			//filtering
 	 		//we don't need the first string attribute
-	 		data = ProteinUtils.removeFirstAttribute(data);
+	 		data = ProteinUtils.removeNotImportantAttributes(data);
 			
 	 		//create subsample of the dataset
 	 		//data = resampleDataset(data);

@@ -1,7 +1,11 @@
 package de.tum.in.pp1;
 
+import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -43,29 +47,39 @@ public class ProteinUtils {
 		return data;
 	}
 	
+	
 	/**
-	 * During the training or prediction, String atttributes are not used. 
+	 * Removes attributes that are listed in 'attributes_remove.txt' file.
+	 * It also removes the first attribute of the dataset, because, during the training or prediction, String atttributes are not used. 
 	 * In our case, the first attribute "ID_pos" is string and it is not relevant for the training/testing.
 	 * So we must remove it prior the training/testing, otherwise, we get an error.
 	 * @param data dataset
-	 * @return the dataset without the "ID_pos" column
+	 * @return the dataset without the "ID_pos" column and all columns defined in the 'attributes_remove.txt' file.
 	 * @throws Exception
 	 */
-	public static Instances removeFirstAttribute(Instances data) throws Exception {
-		System.out.println("\n Remove first attribute...");
-		
-		if (data.attribute("ID_pos") == null) {
-			// ID_pos attribute already removed.
-			return data;
-		}
+	public static Instances removeNotImportantAttributes(Instances data) throws Exception {
+
 		String[] options = new String[2];
-		 options[0] = "-R";                                    // "range"
-		 options[1] = "1";                                     // first attribute
-		 Remove remove = new Remove();                         // new instance of filter
-		 remove.setOptions(options);                           // set options
-		 remove.setInputFormat(data);                          // inform filter about dataset **AFTER** setting options
-		 data = Filter.useFilter(data, remove);   // apply filter
-		 return data;
+		options[0] = "-R"; // "range"
+		options[1] = "1"; 
+		FileInputStream fstream = new FileInputStream("attributes_remove.txt");
+		DataInputStream in = new DataInputStream(fstream);
+		BufferedReader br = new BufferedReader(new InputStreamReader(in));
+		
+		String strLine;
+		while ((strLine = br.readLine()) != null) {
+			Attribute attribute = data.attribute(strLine);
+			if (attribute != null) {
+				int index = attribute.index();
+				options[1] = options[1].concat("," + index);
+			}
+		}
+		Remove remove = new Remove(); // new instance of filter
+		remove.setOptions(options); // set options
+		remove.setInputFormat(data); // inform filter about dataset **AFTER**
+										// setting options
+		data = Filter.useFilter(data, remove); // apply filter
+		return data;
 	}
 	
 	/**
