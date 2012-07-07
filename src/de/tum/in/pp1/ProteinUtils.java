@@ -12,6 +12,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Vector;
 
+import weka.classifiers.AbstractClassifier;
 import weka.core.Attribute;
 import weka.core.Instances;
 import weka.core.converters.ArffLoader;
@@ -58,7 +59,7 @@ public class ProteinUtils {
 	 * @throws Exception
 	 */
 	public static Instances removeNotImportantAttributes(Instances data) throws Exception {
-
+		int count = 0;
 		String[] options = new String[2];
 		options[0] = "-R"; // "range"
 		options[1] = "1"; 
@@ -72,6 +73,7 @@ public class ProteinUtils {
 			if (attribute != null) {
 				int index = attribute.index();
 				options[1] = options[1].concat("," + index);
+				count++;
 			}
 		}
 		Remove remove = new Remove(); // new instance of filter
@@ -79,6 +81,7 @@ public class ProteinUtils {
 		remove.setInputFormat(data); // inform filter about dataset **AFTER**
 										// setting options
 		data = Filter.useFilter(data, remove); // apply filter
+		System.out.println("Removed:" + count + " attributes");
 		return data;
 	}
 	
@@ -102,10 +105,11 @@ public class ProteinUtils {
 	 * For example, it might check whether there are 17 consecutive TM amino-acids ??? 
 	 * @param predictions list of the predicted classes for the testing set: value 0.0 for TM and 1.0 for Non-TM amino acid.
 	 * @param idsAndPosition the "ID_pos" attribute, containing the protein id and residue position for each 
+	 * @param svmScheme the classifier that might be used for getting the probability estimates for the instances ( svmScheme.distributionForInstance(someInstance) )
 	 * prediction given with the first argument respectively 
 	 * @return a map containing of key/value pairs where the key is the protein id and the value is a string representing whether or not each AA is TM.
 	 */
-	public static Map<String, String> postProcessPredictions(List<Double> predictions, Attribute idsAndPosition, double[] classification) {
+	public static Map<String, String> postProcessPredictions(List<Double> predictions, Attribute idsAndPosition, double[] classification, AbstractClassifier svmScheme) {
 		//TODO: this method is not completely implemented!
 		Map<String,String> proteins2Class = new LinkedHashMap<String,String>();
 

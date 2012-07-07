@@ -8,8 +8,10 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import weka.attributeSelection.CfsSubsetEval;
 import weka.attributeSelection.GreedyStepwise;
+import weka.classifiers.AbstractClassifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.functions.LibSVM;
+import weka.classifiers.functions.SMO;
 import weka.core.Debug.Random;
 import weka.core.Instances;
 import weka.core.SerializationHelper;
@@ -73,7 +75,7 @@ public class Program1ModelBuilding {
 			
 			
 			 //create new instance of SVM
-			LibSVM svmScheme = buildSVM(data);
+	 		AbstractClassifier svmScheme = buildSVM(data);
 			 
 			//save the model using the output path
 			saveModel(svmScheme);
@@ -132,12 +134,13 @@ public class Program1ModelBuilding {
 	/**
 	 * Trains an SVM model using the provided training set.
 	 * @param data the training instances
-	 * @return trained {@link LibSVM}
+	 * @return trained {@link AbstractClassifier}
 	 * @throws Exception
 	 */
-	public static LibSVM buildSVM(Instances data) throws Exception {
+	public static AbstractClassifier buildSVM(Instances data) throws Exception {
 		System.out.println("\n Building SVM...");
-		LibSVM svmScheme = setupSVM();
+		//LibSVM svmScheme = setupSVM();
+		AbstractClassifier svmScheme = setupLibSVM();
 		svmScheme.buildClassifier(data);
 		return svmScheme;
 	}
@@ -148,12 +151,26 @@ public class Program1ModelBuilding {
 	 * @return SVM that is still not trained
 	 * @throws Exception
 	 */
-	public static LibSVM setupSVM() throws Exception{
+	public static LibSVM setupLibSVM() throws Exception{
 		LibSVM svmScheme = new weka.classifiers.functions.LibSVM();
 		// set options
-		//svmScheme.setOptions(weka.core.Utils.splitOptions("-C 1.0 -L 0.0010 -P 1.0E-12 -N 0 -V -1 -W 1 -K \"weka.classifiers.functions.supportVector.PolyKernel -C 250007 -E 1.0\""));
-		svmScheme.setOptions(weka.core.Utils.splitOptions("weka.classifiers.functions.LibSVM -S 0 -K 2 -D 3 -G 0.0 -R 0.0 -N 0.5 -M 40.0 -C 1.0 -E 0.001 -P 0.1"));
+		svmScheme.setOptions(weka.core.Utils.splitOptions("weka.classifiers.functions.LibSVM -S 0 -K 2 -D 3 -G 0.0 -R 0.0 -N 0.5 -M 40.0 -C 4870.0 -E 0.0009765625 -P 0.1"));
+		svmScheme.setProbabilityEstimates(true);
 		return svmScheme;
+	}
+	
+	/**
+	 * Creates new SMO and sets the options.
+	 * There are a lot of parameters to be adjusted for the SVM!!!
+	 * @return SVM that is still not trained
+	 * @throws Exception
+	 */
+	public static SMO setupSMO() throws Exception{
+		SMO smoScheme = new SMO();
+		// set options
+		smoScheme.setOptions(weka.core.Utils.splitOptions("weka.classifiers.functions.SMO -C 4870.0 -L 0.0010 -P 1.0E-12 -N 0 -V -1 -W 1 -K \"weka.classifiers.functions.supportVector.RBFKernel -C 250007 -G 0.0009765625\""));
+		smoScheme.setBuildLogisticModels(true);
+		return smoScheme;
 	}
 	
 	
@@ -174,7 +191,7 @@ public class Program1ModelBuilding {
 		Instances test = new Instances(trainingData, trainSize, testSize); 
 		
 		//build the SVM classifier using the training set
-		weka.classifiers.functions.LibSVM svmScheme = buildSVM(train);
+		AbstractClassifier svmScheme = buildSVM(train);
 		
 		Evaluation eval = new Evaluation(train);
 		
@@ -199,14 +216,14 @@ public class Program1ModelBuilding {
 		//K-fold
 		System.out.println("\n K-fold evaluation...");
 		Evaluation eval = new Evaluation(data);
-		LibSVM svmScheme = setupSVM();
+		LibSVM svmScheme = setupLibSVM();
 		eval.crossValidateModel(svmScheme, data, FOLDS, new Random((int)System.currentTimeMillis()));
 		System.out.println(eval.toSummaryString("\nResults\n======\n", false));
 		System.out.println(eval.toClassDetailsString());
 		System.out.println(eval.toMatrixString());
 	}
 	
-	private static void saveModel(LibSVM svmScheme) throws Exception {
+	private static void saveModel(AbstractClassifier svmScheme) throws Exception {
 		SerializationHelper.write(outputPath, svmScheme);
 		System.out.println("SVM model saved in " + outputPath);
 	}
