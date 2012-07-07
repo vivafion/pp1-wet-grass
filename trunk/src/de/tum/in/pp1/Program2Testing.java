@@ -7,8 +7,8 @@ import java.util.Map;
 
 import org.apache.commons.lang3.ArrayUtils;
 
+import weka.classifiers.AbstractClassifier;
 import weka.classifiers.Evaluation;
-import weka.classifiers.functions.LibSVM;
 import weka.core.Attribute;
 import weka.core.Instances;
 import weka.core.SerializationHelper;
@@ -59,7 +59,7 @@ public class Program2Testing {
 		try { 
 			
 			//load trained model
-			weka.classifiers.functions.LibSVM svmScheme = loadModel(modelPath);
+			AbstractClassifier svmScheme = loadModel(modelPath);
 
 			//Read testing dataset
 			//testingData = ProteinUtils.loadDataset(testingSetPath, false);
@@ -74,9 +74,8 @@ public class Program2Testing {
 
 			//Predict
 			predictions = predictTestingSet(testingData, svmScheme);
-		
 			
-			Map<String,String> proteinId2Class = ProteinUtils.postProcessPredictions(predictions, idAndPositionAtt, classification);
+			Map<String,String> proteinId2Class = ProteinUtils.postProcessPredictions(predictions, idAndPositionAtt, classification, svmScheme);
 			
 			//save the predictions in file
 			SerializationHelper.write(resultOutputPath, proteinId2Class);
@@ -90,13 +89,13 @@ public class Program2Testing {
 	}
 	
 	/**
-	 * Load trained LibSVM model from the specified path
+	 * Load trained AbstractClassifier model from the specified path
 	 * @param theModelPath
-	 * @return {@link LibSVM} object
+	 * @return {@link AbstractClassifier} object
 	 */
-	private static LibSVM loadModel(String theModelPath) {
+	private static AbstractClassifier loadModel(String theModelPath) {
 		try {
-			return (weka.classifiers.functions.LibSVM)SerializationHelper.read(theModelPath);
+			return (AbstractClassifier)SerializationHelper.read(theModelPath);
 		} catch (Exception e) {
 			return null;
 		}
@@ -109,7 +108,7 @@ public class Program2Testing {
 	 * @return list of predictions for each instance from testingData respectively.
 	 * @throws Exception
 	 */
-	public static List<Double> predictTestingSet(Instances testingData, weka.classifiers.functions.LibSVM svmScheme) throws Exception {
+	public static List<Double> predictTestingSet(Instances testingData, AbstractClassifier svmScheme) throws Exception {
 		System.out.println("\n Testset prediction...");
 		
 		Evaluation eval = new Evaluation(testingData);
