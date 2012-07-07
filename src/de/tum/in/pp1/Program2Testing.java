@@ -70,7 +70,7 @@ public class Program2Testing {
 			classification = testingData.attributeToDoubleArray(testingData.numAttributes()-1);
 			
 			//we don't need the first string attribute for prediction
-			testingData = ProteinUtils.removeFirstAttribute(testingData);
+			testingData = ProteinUtils.removeNotImportantAttributes(testingData);
 
 			//Predict
 			predictions = predictTestingSet(testingData, svmScheme);
