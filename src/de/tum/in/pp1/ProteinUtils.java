@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -301,5 +302,38 @@ public class ProteinUtils {
 		smote.setRandomSeed((int)System.currentTimeMillis());
 		dataset = Resample.useFilter(dataset, smote);
 		return dataset;
+	}
+	
+	
+	public static int[] getPercentageResidueAccuracyPerProtein(List<Double> predictions, 
+			Attribute idsAndPosition, 
+			double[] classification, 
+			Map<String,String> proteins2Class) {
+		
+		int[] histogram = new int[21];
+		for (int i = 0; i < histogram.length; i++) {
+			histogram[i] = 0;
+		}
+		
+		for (Iterator<String> iter = proteins2Class.keySet().iterator(); iter.hasNext();) {
+			float numberOfHits = 0;
+			String protein = (String) iter.next();
+			char[] sequence = proteins2Class.get(protein).toCharArray();
+			for (int i = 0; i < sequence.length; i++) {
+				int indexOfInstance = idsAndPosition.indexOfValue(protein + "_" + i);
+				if (classification[indexOfInstance] == predictions.get(indexOfInstance)) {
+					numberOfHits++;
+				}
+			}
+			float predictionAccuracyOfProtein = numberOfHits / sequence.length;
+			int indexInHistogram = (int) (predictionAccuracyOfProtein * 100 / 5);
+			histogram[indexInHistogram]++;
+		}
+		
+		System.out.println("Histogram (Y:Number of proteins, X:Percentage correctly predicted residues per protein) : ");
+		for (int i = 0; i < histogram.length; i++) {
+			System.out.println(i*5+"%-" + (i*5+5) + "% : " + histogram[i]);
+		}
+		return histogram;
 	}
 }

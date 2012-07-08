@@ -77,6 +77,8 @@ public class Program2Testing {
 			
 			Map<String,String> proteinId2Class = ProteinUtils.postProcessPredictions(predictions, idAndPositionAtt, classification, svmScheme);
 			
+			int[] histogram = ProteinUtils.getPercentageResidueAccuracyPerProtein(predictions, idAndPositionAtt, classification,proteinId2Class);
+			
 			//save the predictions in file
 			SerializationHelper.write(resultOutputPath, proteinId2Class);
 			System.out.println("Predictions saved in " + resultOutputPath);
