@@ -32,7 +32,7 @@ public class Program1ModelBuilding {
 	//Sets the bias towards a uniform class. A value of 0 leaves the class distribution as-is, 
 	//a value of 1 ensures the class distributions are uniform in the output data.
 	private static final double BIAS_TO_UNIFORM_CLASS = 1.0;
-	private static final int FOLDS = 2;
+	private static final int FOLDS = 10;
 	private static final double SPLIT_PERCENTAGE = 66.0;
 	
 	
@@ -73,12 +73,18 @@ public class Program1ModelBuilding {
 			// feature reduction
 			//data = filterImportantAttributes(data);
 			
-			
+	 		long startTime = System.currentTimeMillis();
 			 //create new instance of SVM
 	 		AbstractClassifier svmScheme = buildSVM(data);
 			 
+	 		long endTime = System.currentTimeMillis();
+	 		
+	 		System.out.println("Time requred to train SVM: " + (endTime-startTime)/1000.0 +" sec");
+	 		 
 			//save the model using the output path
 			saveModel(svmScheme);
+			
+			//evaluateKFold(data);
 			
 			
 		} catch (IOException e) {
