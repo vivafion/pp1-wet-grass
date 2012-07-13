@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -86,6 +87,58 @@ public class ProteinUtils {
 		return data;
 	}
 	
+	/**
+	 * Keeps all attributes that contain any of the keywords listed in 'attributes_selected.txt' file. Other attributes are removed.
+	 * It also removes the first attribute of the dataset, because, during the training or prediction, String atttributes are not used. 
+	 * In our case, the first attribute "ID_pos" is string and it is not relevant for the training/testing.
+	 * So we must remove it prior the training/testing, otherwise, we get an error.
+	 * @param data dataset
+	 * @return the dataset
+	 * @throws Exception
+	 */
+	public static Instances removeNotImportantAttributesImproved(Instances data) throws Exception {
+		
+		List<String> selectedAttributeNames = new LinkedList<String>();
+		int count = 0;
+		String[] options = new String[2];
+		options[0] = "-R"; // "range"
+		options[1] = "1"; 
+		FileInputStream fstream = new FileInputStream("attributes_selected.txt");
+		DataInputStream in = new DataInputStream(fstream);
+		BufferedReader br = new BufferedReader(new InputStreamReader(in));
+		String strLine;
+		while ((strLine = br.readLine()) != null) {
+			selectedAttributeNames.add(strLine);
+		}
+		
+		for (int i = 1; i < data.numAttributes(); i++) {
+			Attribute att = data.attribute(i);
+			if (!isIncludedInSelectedAttrbiutes(att.name(), selectedAttributeNames)) {
+				int index = att.index();
+				options[1] = options[1].concat("," + index);
+				count++;
+			}
+		}
+		
+		Remove remove = new Remove(); // new instance of filter
+		remove.setOptions(options); // set options
+		remove.setInputFormat(data); // inform filter about dataset **AFTER**
+		// setting options
+		data = Filter.useFilter(data, remove); // apply filter
+		System.out.println("Removed:" + count + " attributes");
+		return data;
+	}
+	
+	private static boolean isIncludedInSelectedAttrbiutes(String testAttName, List<String> selectedAttributeNames) {
+		for (String attName : selectedAttributeNames) {
+			if (testAttName.contains(attName)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+
 	/**
 	 * Randomly shuffles the order of instances passed through it. 
 	 * @param data the dataset to be shuffled
