@@ -1,7 +1,10 @@
 package de.tum.in.pp1;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -64,6 +67,7 @@ public class Program2Testing {
 			//Read testing dataset
 			//testingData = ProteinUtils.loadDataset(testingSetPath, false);
 			testingData = ProteinUtils.loadDataset(testingSetPath, true);
+			Map<String,String> proteinToTrueClass = ProteinUtils.getTestsetAsMap(testingData);
 			
 			//keep the first attribute - ids and positions of the amino acids
 			idAndPositionAtt = testingData.attribute(0);
@@ -76,8 +80,11 @@ public class Program2Testing {
 			predictions = predictTestingSet(testingData, svmScheme);
 			
 			Map<String,String> proteinId2Class = ProteinUtils.postProcessPredictions(predictions, idAndPositionAtt, classification, svmScheme);
-			
 			int[] histogram = ProteinUtils.getPercentageResidueAccuracyPerProtein(predictions, idAndPositionAtt, classification,proteinId2Class);
+			float qok = ProteinUtils.calculateQok(proteinId2Class, proteinToTrueClass);
+			System.out.println("Qok=" + qok);
+
+			debugPredictions(predictions, classification, proteinId2Class);
 			
 			//save the predictions in file
 			SerializationHelper.write(resultOutputPath, proteinId2Class);
@@ -88,6 +95,36 @@ public class Program2Testing {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	private static void debugPredictions(List<Double> predictions, double[] classification, Map<String, String> proteinId2Class) {
+		FileWriter fstream;
+		try {
+			String postproces = "";
+			fstream = new FileWriter("out.txt");
+			BufferedWriter out = new BufferedWriter(fstream);
+			
+			for (Iterator<String> iterator = proteinId2Class.keySet().iterator(); iterator.hasNext();) {
+				String prot = (String) iterator.next();
+				postproces = postproces.concat(proteinId2Class.get(prot));
+			}
+			out.write("pred post clas");
+			out.newLine();
+			for (int i = 1; i < predictions.size(); i++) {
+				char pred = predictions.get(i) == 0.0 ? '+' : '-';
+				char post = postproces.charAt(i);
+				char clas = classification[i] == 0.0 ? '+' : '-';
+				//System.out.println(pred + " " + post + " " + clas); //(float)svmScheme.distributionForInstance(testingData.instance(i))[0]
+				out.write(pred + " " + post + " " + clas);
+				out.newLine();
+			}
+			// Close the output stream
+			out.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 	
 	/**
