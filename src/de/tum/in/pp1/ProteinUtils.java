@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -13,6 +14,10 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringUtils;
 
 import weka.classifiers.AbstractClassifier;
 import weka.core.Attribute;
@@ -119,13 +124,14 @@ public class ProteinUtils {
 				count++;
 			}
 		}
-		
+		int attNumber = data.numAttributes();
 		Remove remove = new Remove(); // new instance of filter
 		remove.setOptions(options); // set options
 		remove.setInputFormat(data); // inform filter about dataset **AFTER**
 		// setting options
 		data = Filter.useFilter(data, remove); // apply filter
-		System.out.println("Removed:" + count + " attributes");
+		System.out.println("Removed:" + count + "of " + attNumber + " attributes");
+		
 		return data;
 	}
 	
@@ -164,6 +170,7 @@ public class ProteinUtils {
 	 * @return a map containing of key/value pairs where the key is the protein id and the value is a string representing whether or not each AA is TM.
 	 */
 	public static Map<String, String> postProcessPredictions(List<Double> predictions, Attribute idsAndPosition, double[] classification, AbstractClassifier svmScheme) {
+		
 		//TODO: this method is not completely implemented!
 		Map<String,String> proteins2Class = new LinkedHashMap<String,String>();
 
@@ -207,97 +214,127 @@ public class ProteinUtils {
 			i--;
 		}
 		
-		// finds starts and ends for each predicted TM helix
-		Map<String,Vector<int[]>> TMpositions = new LinkedHashMap<String,Vector<int[]>>();
-		for (String protein : proteins2Class.keySet()){
-			Boolean inTM = false;
-			TMpositions.put(protein, new Vector<int[]>());
-			int[] startEndPair = new int[2];
-			//detects starts end ends of consecutive TM predictions
-			for (int i = 0; i < proteins2Class.get(protein).length(); i++){
-				if (inTM == false){
-					if (proteins2Class.get(protein).charAt(i)=='-'){
-					}
-					else if ( proteins2Class.get(protein).charAt(i)=='+'){
-						startEndPair[0] = i;
-						inTM = true;
-					}
-				}
-				else{
-					if (proteins2Class.get(protein).charAt(i)=='+'){
-					}
-					else if (proteins2Class.get(protein).charAt(i)=='-'){
-						startEndPair[1] = i-1;
-						inTM = false;
-						//System.out.println ("TM start: "+ startEndPair[0] + " TM end: " + startEndPair[1]);
-						TMpositions.get(protein).add( startEndPair.clone() );
-					}
-				}
-					
-			}			
+		
+		for (Iterator<String> iterator = proteins2Class.keySet().iterator(); iterator.hasNext();) {
+			String prot = (String) iterator.next();
+			String sequence = proteins2Class.get(prot);
+			//pattern for small gaps in helices (---++++--++++++---) -> connect such small gaps
+			Pattern p = Pattern.compile("\\+(\\-{1,4})\\+");
+		    Matcher m = p.matcher(sequence);
+		    StringBuffer s = new StringBuffer();
+		    while (m.find()) {
+		    	int gapSize = m.group(1).length();
+		    	String pluses = StringUtils.repeat('+', gapSize + 2);
+		    	m.appendReplacement(s, pluses);
+		    }
+		    m.appendTail(s);
+		    
+		    //pattern for matching predictions with less then 5 consecutive TM residues -> delete such cases
+		    Pattern p1 = Pattern.compile("\\-(\\+{1,4})\\-");
+		    Matcher m1 = p1.matcher(s.toString());
+		    StringBuffer s1 = new StringBuffer();
+		    while (m1.find()) {
+		    	int gapSize = m1.group(1).length();
+		    	String pluses = StringUtils.repeat('-', gapSize + 2);
+		    	m1.appendReplacement(s1, pluses);
+		    }
+		    m1.appendTail(s1);
+		    proteins2Class.put(prot, s1.toString());
+		    //System.out.println(s1.toString());
+		    
 		}
 		
-		// For each predicted TM helix see if you can connect it to a prediction close by
-		// then check its size, if its below 10 remove it
-		for (String protein : TMpositions.keySet()){
-			ListIterator<int[]> itr = TMpositions.get(protein).listIterator();
-			while ( itr.hasNext()) {
-				int[] startStopPos = itr.next();
-				int curStart = startStopPos[0];
-				int curEnd = startStopPos[1];
-				//look to previous tm part
-				if (itr.hasPrevious()){
-					itr.previous();
-					if (itr.hasPrevious()){
-						int[] prev = itr.previous();
-						if (curStart - prev[1] <= 2){
-							curStart = prev[0];
-						}
-						itr.next();
-					}
-					itr.next();
-				}
-				//look to next tm part
-				if (itr.hasNext()){
-					int[] next = itr.next();
-					if (next[0] - curEnd <= 2){
-						curEnd = next[1];
-					}
-					itr.previous();
-				}
-				
-				// if below 16 residues, throw it out
-				if (curEnd - curStart < 16){
-					String tmp = proteins2Class.get(protein);
-					String start = tmp.substring(0,curStart);
-					String mid = "";
-					//build up new string with deleted prediction
-					for (int j = 0; j <= curEnd - curStart ; j++)
-						mid += "-";
-					String end = tmp.substring(curEnd+1, tmp.length());
-					//System.out.println("Old length: " + tmp.length());
-					//System.out.println(tmp);
-					//System.out.println(start+mid+end);
-					//System.out.println("New lenth:" + (start+mid+end).length());
-					proteins2Class.put(protein, start+mid+end);
-				}
-				//else keep it
-				else {
-					String tmp = proteins2Class.get(protein);
-					String start = tmp.substring(0,curStart);
-					String mid = "";
-					//build up neu string with combined section
-					for (int j = 0; j <= curEnd - curStart ; j++)
-						mid += "+";
-					String end = tmp.substring(curEnd+1, tmp.length());
-					//System.out.println("Old length: " + tmp.length());
-					//System.out.println(tmp);
-					//System.out.println(start+mid+end);
-					//System.out.println("New lenth:" + (start+mid+end).length());
-					proteins2Class.put(protein, start+mid+end);
-				}
-			}		
-		}
+//		// finds starts and ends for each predicted TM helix
+//		Map<String,Vector<int[]>> TMpositions = new LinkedHashMap<String,Vector<int[]>>();
+//		for (String protein : proteins2Class.keySet()){
+//			Boolean inTM = false;
+//			TMpositions.put(protein, new Vector<int[]>());
+//			int[] startEndPair = new int[2];
+//			//detects starts end ends of consecutive TM predictions
+//			for (int i = 0; i < proteins2Class.get(protein).length(); i++){
+//				if (inTM == false){
+//					if (proteins2Class.get(protein).charAt(i)=='-'){
+//					}
+//					else if ( proteins2Class.get(protein).charAt(i)=='+'){
+//						startEndPair[0] = i;
+//						inTM = true;
+//					}
+//				}
+//				else{
+//					if (proteins2Class.get(protein).charAt(i)=='+'){
+//					}
+//					else if (proteins2Class.get(protein).charAt(i)=='-'){
+//						startEndPair[1] = i-1;
+//						inTM = false;
+//						//System.out.println ("TM start: "+ startEndPair[0] + " TM end: " + startEndPair[1]);
+//						TMpositions.get(protein).add( startEndPair.clone() );
+//					}
+//				}
+//					
+//			}			
+//		}
+//		
+//		// For each predicted TM helix see if you can connect it to a prediction close by
+//		// then check its size, if its below 10 remove it
+//		for (String protein : TMpositions.keySet()){
+//			ListIterator<int[]> itr = TMpositions.get(protein).listIterator();
+//			while ( itr.hasNext()) {
+//				int[] startStopPos = itr.next();
+//				int curStart = startStopPos[0];
+//				int curEnd = startStopPos[1];
+//				//look to previous tm part
+//				if (itr.hasPrevious()){
+//					itr.previous();
+//					if (itr.hasPrevious()){
+//						int[] prev = itr.previous();
+//						if (curStart - prev[1] <= 2){
+//							curStart = prev[0];
+//						}
+//						itr.next();
+//					}
+//					itr.next();
+//				}
+//				//look to next tm part
+//				if (itr.hasNext()){
+//					int[] next = itr.next();
+//					if (next[0] - curEnd <= 2){
+//						curEnd = next[1];
+//					}
+//					itr.previous();
+//				}
+//				
+//				// if below 16 residues, throw it out
+//				if (curEnd - curStart < 4){
+//					String tmp = proteins2Class.get(protein);
+//					String start = tmp.substring(0,curStart);
+//					String mid = "";
+//					//build up new string with deleted prediction
+//					for (int j = 0; j <= curEnd - curStart ; j++)
+//						mid += "-";
+//					String end = tmp.substring(curEnd+1, tmp.length());
+//					//System.out.println("Old length: " + tmp.length());
+//					//System.out.println(tmp);
+//					//System.out.println(start+mid+end);
+//					//System.out.println("New lenth:" + (start+mid+end).length());
+//					proteins2Class.put(protein, start+mid+end);
+//				}
+//				//else keep it
+//				else {
+//					String tmp = proteins2Class.get(protein);
+//					String start = tmp.substring(0,curStart);
+//					String mid = "";
+//					//build up neu string with combined section
+//					for (int j = 0; j <= curEnd - curStart ; j++)
+//						mid += "+";
+//					String end = tmp.substring(curEnd+1, tmp.length());
+//					//System.out.println("Old length: " + tmp.length());
+//					//System.out.println(tmp);
+//					//System.out.println(start+mid+end);
+//					//System.out.println("New lenth:" + (start+mid+end).length());
+//					proteins2Class.put(protein, start+mid+end);
+//				}
+//			}		
+//		}
 		
 		// do simple evaluation
 		int i = 0;
@@ -326,15 +363,59 @@ public class ProteinUtils {
 				}
 			}
 		}
-		System.out.println("True TM " + true_positives);
-		System.out.println("False TM " + false_positives);
-		System.out.println("True nonTM " + true_negatives);
-		System.out.println("False nonTM " + false_negatives);
+		System.out.println("True TM = " + true_positives);
+		System.out.println("False TM = " + false_positives);
+		System.out.println("True nonTM = " + true_negatives);
+		System.out.println("False nonTM = " + false_negatives);
 
-		System.out.println("TM Precision " +(float)true_positives/(true_positives + false_positives));		
-		System.out.println("non TM Precision " +(float)true_negatives/(true_negatives + false_negatives));
+		System.out.println("Q2=TM Precision = " +(float)true_positives/(true_positives + false_positives));		
+		System.out.println("non TM Precision = " +(float)true_negatives/(true_negatives + false_negatives));
+		
+		System.out.println("Sensitivity=Recall = " +(float)true_positives/(true_positives + false_negatives));
+		System.out.println("Specificity = " +(float)true_negatives/(true_negatives + false_positives));
+		
+		System.out.println("Correctly Classified Instances = " +(float)(true_positives + true_negatives)/(true_negatives + false_positives + true_positives + false_negatives));
 
 		return proteins2Class;
+	}
+	
+	public static float calculateQok(Map<String, String> predicted, Map<String, String> trueproteins) {
+		float correctNumberOfHelicesInProtein = 0;
+		float tmProteins = 0;
+		for (Iterator<String> iterator = predicted.keySet().iterator(); iterator.hasNext();) {
+			String protein = (String) iterator.next();
+			String sequencePred = predicted.get(protein);
+			String sequenceTrue = trueproteins.get(protein);
+			int helicesPred =  ("-" + sequencePred + '-').split("\\-+").length;
+			int helicesTrue =  ("-" + sequenceTrue + '-').split("\\-+").length;
+			if (helicesTrue > 0) {
+				//TM protein
+				tmProteins++;
+				if (helicesPred == helicesTrue) {
+					correctNumberOfHelicesInProtein++;
+				}
+			}
+		}
+		
+		return correctNumberOfHelicesInProtein/tmProteins;
+		
+	}
+	
+	public static Map<String, String> getTestsetAsMap(Instances testset) {
+		Map<String, String> protein2Map = new HashMap<String, String>();
+		Attribute idsAndPosition = testset.attribute(0);
+		String currentSequence = idsAndPosition.value(0).substring(0, idsAndPosition.value(0).lastIndexOf("_"));
+		protein2Map.put(currentSequence, "");
+		for (int i = 0; i < testset.numInstances(); i++) {
+			if (!currentSequence.equals(idsAndPosition.value(i).substring(0, idsAndPosition.value(i).lastIndexOf("_")))) {
+				currentSequence = idsAndPosition.value(i).substring(0, idsAndPosition.value(i).lastIndexOf("_"));
+				protein2Map.put(currentSequence, "");
+			}
+			String tmp = protein2Map.get(currentSequence);
+			protein2Map.put(currentSequence, tmp + testset.instance(i).stringValue(testset.numAttributes() - 1));
+		}
+		
+		return protein2Map;
 	}
 	
 	/**
