@@ -5,10 +5,11 @@
 package de.tum.in.pp1;
 
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Properties;
+
+import org.apache.commons.lang3.builder.EqualsBuilder;
+
 
 /**
  * This file calls the scripts to generate the arff files.
@@ -73,19 +74,28 @@ public class GeneratePredictMeArff {
 			testsetOutputArffPath = prop.getProperty("testsetOutputArffPath");//path of where the arff file will be generated for testset; arg[2] while calling parseTMnonTM.pl 
 			
 			
+			boolean boolTrainSet=trainingOrTestsetFlag.equalsIgnoreCase("1");
+			boolean boolCallPP=callPPFlag.equalsIgnoreCase("true");
+			boolean boolUseImpSolFiles=impOrSolFlag.equalsIgnoreCase("1");
+			
+			
 			//run scripts to get the training set arff file
 			if(trainingOrTestsetFlag.equalsIgnoreCase("1")){
-				if(callPPFlag.equalsIgnoreCase("true")){
+				if(boolCallPP){
 					//call script1: callPredictProtein.sh to run PredictProtein
-					path1 = path1 +" "+ datasetFastaPath+" "+ predictProteinOutput+ " "+impOrSolFlag;
+//					path1 = path1 +" "+ datasetFastaPath+" "+ predictProteinOutput+ " "+impOrSolFlag;
 					//Runtime.getRuntime().exec(path1);
-					executeScript(path1);
+//					executeScript(path1);
+					callPP(datasetFastaPath, boolUseImpSolFiles, predictProteinOutput);
+					
 					System.out.println("script1 executed...");
 				}
 				//call script2: parseTMnonTM.pl to generate Prot files
-				path2 = "perl "+path2+" " +trainingOrTestsetFlag+ " " +predictProteinOutput+" "+datasetPath;
+//				path2 = "perl "+path2+" " +trainingOrTestsetFlag+ " " +predictProteinOutput+" "+datasetPath;
 				//Runtime.getRuntime().exec(path2);
-				executeScript(path2);
+//				executeScript(path2);
+				
+				parseTMnonTM(predictProteinOutput, datasetPath, boolTrainSet);
 				System.out.println("script2 executed...");
 				
 				//call script3: pp2features.py to run PP2Features and generate output arff file
@@ -96,21 +106,24 @@ public class GeneratePredictMeArff {
 				System.out.println("....trainingset output arff is generated...");
 		     }else{	
 				//run scripts to get the testing set arff file
-		    	if(callPPFlag.equalsIgnoreCase("true")){
+		    	if(boolCallPP){
 			    	 //call script1: callPredictProtein.sh to run PredictProtein
-					path4 = path1 +" "+ testsetFastaPath+" "+ predictProteinTestsetOutput+ " "+impOrSolFlag;
+//					path4 = path1 +" "+ testsetFastaPath+" "+ predictProteinTestsetOutput+ " "+impOrSolFlag;
+					callPP(testsetFastaPath, boolUseImpSolFiles, predictProteinTestsetOutput);
+//					executeScript(path4);
 					
-					executeScript(path4);
 					System.out.println("script1 executed for testing set...");
 		    	}	
 					
 				//call script2: parseTMnonTM.pl to generate Prot files
-				path5 = "perl "+path2+" " +trainingOrTestsetFlag+ " " +predictProteinTestsetOutput +" " +testsetPath;
-				executeScript(path5);
+//				path5 = "perl "+path2+" " +trainingOrTestsetFlag+ " " +predictProteinTestsetOutput +" " +testsetPath;
+//				executeScript(path5);
+		    	
+		    	parseTMnonTM(predictProteinTestsetOutput, testsetPath, boolTrainSet);
 				System.out.println("script2 executed for testing set...");
 				
 				//call script3: pp2features.py to run PP2Features and generate output arff file
-				path6 = "python " +path3 +" -a prot.arff --arff-file "+testsetOutputArffPath+PP2FeatureOutputFileNameTestset+" -p "+predictProteinTestsetOutput+" -f sampleConfig.cfg -e error.txt";
+				path6 = "python " +path3 +" -a prot.arff --arff-file "+testsetOutputArffPath+PP2FeatureOutputFileName+" -p "+predictProteinTestsetOutput+" -f sampleConfig.cfg -e error.txt";
 				executeScript(path6);
 				System.out.println("script3 executed for testset...");
 				System.out.println("....testingset output arff is generated...");
@@ -148,4 +161,175 @@ public class GeneratePredictMeArff {
         }
 	}
 
+
+
+	
+	private static void callPP(String pathWithAllFiles, boolean useImpSol, String outputPath){
+		
+		if (useImpSol){
+			String impPath=pathWithAllFiles+"impFasta/";
+			String solPath=pathWithAllFiles+"solFasta/";
+			callPPInner(impPath, outputPath);
+			callPPInner(solPath, outputPath);
+			
+		} else {
+			callPPInner(pathWithAllFiles, outputPath);
+		}
+		
+		
+		
+		
+//		File[] files = new File(pathWithAllFiles).listFiles();
+//
+//		for (File file : files) {
+//	        if (file.isFile()) {
+//	            System.out.println("File found: " + file.getName());
+//	            
+//	            
+//	            File folder = new File(outputPath+file.getName());
+//	            try{
+//		            if(folder.mkdir()){
+//		            System.out.println("Directory Created");
+//		            }else{
+//		            System.out.println("Directory creation failed");}
+//	            }catch(Exception e){
+//	            	e.printStackTrace();
+//	            } 
+//	        } else {
+//	            System.out.println("File: " + file.getName());
+//	        }
+//	    }
+		
+	}
+	
+	private static void callPPInner(String path, String outputPath){
+		File[] files = new File(path).listFiles();
+		System.out.println(path);
+		
+		for (File file : files) {
+	        if (file.isFile()) {
+	        	String fileName=file.getName();
+	            System.out.println("File found: " + fileName+"        concatenated: "+path+fileName);
+	            
+	            
+	            File folder = new File(outputPath+file.getName());
+	            try{
+		            if(folder.mkdir()){
+		            System.out.println("Directory Created");
+		            }else{
+		            System.out.println("Directory creation failed");}
+	            }catch(Exception e){
+	            	e.printStackTrace();
+	            } 
+	            executeScript("/usr/bin/predictprotein --seqfile "+path+fileName+" --target=all --target=optional --output-dir "+outputPath+fileName+"/"+" --nouse-cache --bigblastdb=/var/tmp/rost_db/data/big/big --big80blastdb=/var/tmp/rost_db/data/big/big_80 --pfam2db=/var/tmp/rost_db/data/pfam_legacy/Pfam_ls --pfam3db=/var/tmp/rost_db/data/pfam/Pfam-A.hmm --prositeconvdat=/var/tmp/rost_db/data/prosite/prosite_convert.dat --prositedat=/var/tmp/rost_db/data/prosite/prosite.dat --swissblastdb=/var/tmp/rost_db/data/swissprot/uniprot_sprot");
+	        }
+	    }
+	}
+	
+	private static void parseTMnonTM(String folderWithSubfolders,String dataSetFolder, boolean trainSet){
+	
+		File[] files = new File(folderWithSubfolders).listFiles();
+
+		String strucFolder=dataSetFolder+"impStructure/";
+		
+		for (File folder : files) {
+	        if (folder.isDirectory()) {
+	        	String folderName=folder.getName();
+	            System.out.println("File found: " + folderName+"        concatenated: "+folderWithSubfolders+folderName);
+	            
+	            
+	            
+	            
+	            try{
+	            	  // Open the file that is the first 
+	            	  // command line parameter
+	            	
+	            	
+	            	  FileInputStream fastaFile = new FileInputStream(folderWithSubfolders+folderName+"/query.fasta");
+	            	  // Get the object of DataInputStream
+	            	  DataInputStream in = new DataInputStream(fastaFile);
+	            	  BufferedReader br = new BufferedReader(new InputStreamReader(in));
+	            	  String strLine;
+	            	  //Read File Line By Line
+	            	  String realTMState="";
+	            	  String currentLine="";
+	            	  boolean foundStruc=false;
+	            	  if (trainSet){
+	            		  
+	            		  System.out.println("Testing for structure: "+strucFolder+folder.getName()+".fasta");
+	            		  File tester=new File(strucFolder+folder.getName()+".fasta");
+	            		  if (tester.exists()){
+	            			  System.out.println("Structure exists, reading structure from file"+strucFolder+folder.getName()+".fasta");
+	            			  FileInputStream realTMStateFile = new FileInputStream(strucFolder+folder.getName()+".fasta");
+			            	  // Get the object of DataInputStream
+			            	  DataInputStream inRealTM = new DataInputStream(realTMStateFile);
+			            	  BufferedReader brReal = new BufferedReader(new InputStreamReader(inRealTM));
+			            	  currentLine= brReal.readLine();
+			            	  System.out.println("Line 1: "+currentLine);
+			            	  currentLine= brReal.readLine();
+			            	  System.out.println("Line 2: "+currentLine);
+			            	  currentLine= brReal.readLine(); 
+			            	  System.out.println("Line 3: "+currentLine);
+			            	  currentLine= brReal.readLine(); 
+			            	  System.out.println("Line 4: "+currentLine);
+			            	  foundStruc=true;
+	            		  }
+	            		  
+//		            	  currentLine.replace('H', '+');
+//		            	  currentLine.
+	            		  
+	            	  }
+	            	  
+	            	  FileWriter writeProtARFF = new FileWriter(folderWithSubfolders+folderName+"/prot.arff");
+	            	  BufferedWriter out = new BufferedWriter(writeProtARFF);
+	            	  
+	            	  String sequence="";
+	            	  
+	            	  while ((strLine = br.readLine()) != null)   {
+	            	  // Print the content on the console
+	            		  if (strLine.startsWith(">")){
+	            			  out.write( "%Created by group wet_grass\n");
+	            			  out.write("@RELATION\t'prot.arff'\n\n");
+	            			  out.write("@ATTRIBUTE\tpos\tNUMERIC\n");
+	            			  out.write( "@ATTRIBUTE\tclass\t{+,-}\n\n");
+	            			  out.write( "@DATA\n");
+	            		  } else {
+	            			  strLine=strLine.replaceAll("\\s+", "");
+	            			  sequence=sequence+strLine;
+	            			  
+	            		  }
+	            		  
+//	            	  System.out.println (strLine);
+	            	  }
+	            	  in.close();
+	            	  System.out.println("Complete Sequence was: "+sequence);
+	            	  for (int i=0; i<sequence.length();i++){
+	            		  if(!trainSet){
+	            			  out.write(i+",?\n");
+	            		  } else {
+	            			  if (foundStruc){
+		            			  if (currentLine.charAt(i)=='H'){
+		            				  out.write(i+",+\n");
+		            			  } else {
+		            				  out.write(i+",-\n");
+		            			  }
+	            			  } else {
+	            				  out.write(i+",-\n");
+	            			  }
+	            		  }
+	            	  }
+	            	  //Close the input stream
+	            	  
+	            	  out.close();
+	            	    }catch (Exception e){//Catch exception if any
+	            	  System.err.println("Error: " + e.getMessage());
+	            	  }
+	            
+	        }
+	            
+	           
+	    }
+		
+	
+	}
 }
