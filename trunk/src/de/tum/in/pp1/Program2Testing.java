@@ -88,7 +88,7 @@ public class Program2Testing {
 			ProteinUtils.reEvaluate(proteinId2Class, classification);
 			//save the predictions in file
 			writeOutput(resultOutputPath, proteinId2Class);
-			SerializationHelper.write(resultOutputPath, proteinId2Class);
+			//SerializationHelper.write(resultOutputPath, proteinId2Class);
 			System.out.println("Predictions saved in " + resultOutputPath);
 			
 		} catch (IOException e) {
@@ -103,9 +103,11 @@ public class Program2Testing {
 		FileWriter fstream;
 		for (String protein : proteinId2Class.keySet()){
 			try {
-				fstream = new FileWriter(resultOutputPath2 + protein +".fasta");
+				System.out.println(resultOutputPath2);
+				System.out.println(protein);
+				fstream = new FileWriter(resultOutputPath2 +"\\" + protein +".fasta");
 				BufferedWriter out = new BufferedWriter(fstream);
-				out.write(protein);
+				out.write(">"+protein);
 				out.newLine();
 				out.write(proteinId2Class.get(protein));
 				out.newLine();
