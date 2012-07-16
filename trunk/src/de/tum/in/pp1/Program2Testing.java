@@ -85,7 +85,7 @@ public class Program2Testing {
 			System.out.println("Qok=" + qok);
 
 			debugPredictions(predictions, classification, proteinId2Class);
-			
+			ProteinUtils.reEvaluate(proteinId2Class, classification);
 			//save the predictions in file
 			SerializationHelper.write(resultOutputPath, proteinId2Class);
 			System.out.println("Predictions saved in " + resultOutputPath);

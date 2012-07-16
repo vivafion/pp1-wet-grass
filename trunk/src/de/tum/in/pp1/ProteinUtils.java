@@ -210,36 +210,6 @@ public class ProteinUtils {
 			i--;
 		}
 		
-		
-//		for (Iterator<String> iterator = proteins2Class.keySet().iterator(); iterator.hasNext();) {
-//			String prot = (String) iterator.next();
-//			String sequence = proteins2Class.get(prot);
-//			//pattern for small gaps in helices (---++++--++++++---) -> connect such small gaps
-//			Pattern p = Pattern.compile("(?<=\\+)(\\-{1,4})(\\+)");
-//		    Matcher m = p.matcher(sequence);
-//		    StringBuffer s = new StringBuffer();
-//		    while (m.find()) {
-//		    	int gapSize = m.group(1).length();
-//		    	String pluses = StringUtils.repeat('+', gapSize + 1);
-//		    	m.appendReplacement(s, pluses);
-//		    }
-//		    m.appendTail(s);
-//		    
-//		    //pattern for matching predictions with less then 5 consecutive TM residues -> delete such cases
-//		    Pattern p1 = Pattern.compile("\\-(\\+{1,4})\\-");
-//		    Matcher m1 = p1.matcher(s.toString());
-//		    StringBuffer s1 = new StringBuffer();
-//		    while (m1.find()) {
-//		    	int gapSize = m1.group(1).length();
-//		    	String pluses = StringUtils.repeat('-', gapSize + 2);
-//		    	m1.appendReplacement(s1, pluses);
-//		    }
-//		    m1.appendTail(s1);
-//		    proteins2Class.put(prot, s1.toString());
-//		    //System.out.println(s1.toString());
-//		    
-//		}
-		
 		// finds starts and ends for each predicted TM helix
 		Map<String,Vector<int[]>> TMpositions = new LinkedHashMap<String,Vector<int[]>>();
 		for (String protein : proteins2Class.keySet()){
@@ -300,7 +270,7 @@ public class ProteinUtils {
 				}
 				
 				// if below 16 residues, throw it out
-				if (curEnd - curStart < 4){
+				if (curEnd - curStart < 16){
 					String tmp = proteins2Class.get(protein);
 					String start = tmp.substring(0,curStart);
 					String mid = "";
@@ -332,6 +302,30 @@ public class ProteinUtils {
 			}		
 		}
 		
+		return proteins2Class;
+	}
+	
+	/**
+	 * Resamples a dataset by applying the Synthetic Minority Oversampling TEchnique (SMOTE).
+	 * @param dataset dataset
+	 * @param percentage The percentage of SMOTE instances to create.
+	 * @param classValue The index of the class value to which SMOTE should be applied. Use a value of 0 to auto-detect the non-empty minority class.
+	 * @param nearestNeighbors The number of nearest neighbors to use.
+	 * @return resampled dataset
+	 * @throws Exception
+	 */
+	public static Instances smoteDataset(Instances dataset, double percentage, String classValue, int nearestNeighbors) throws Exception {
+		System.out.println("\n SMOTE dataset...");
+		SMOTE smote = new SMOTE();
+		smote.setClassValue("0");
+		smote.setNearestNeighbors(5);
+		smote.setPercentage(percentage);
+		smote.setRandomSeed((int)System.currentTimeMillis());
+		dataset = Resample.useFilter(dataset, smote);
+		return dataset;
+	}
+
+	public static void reEvaluate(Map<String, String> proteins2Class, double[] classification) {
 		// do simple evaluation
 		int i = 0;
 		int true_positives = 0;
@@ -372,7 +366,6 @@ public class ProteinUtils {
 		
 		System.out.println("Correctly Classified Instances = " +(float)(true_positives + true_negatives)/(true_negatives + false_positives + true_positives + false_negatives));
 
-		return proteins2Class;
 	}
 	
 	public static float calculateQok(Map<String, String> predicted, Map<String, String> trueproteins) {
@@ -414,25 +407,6 @@ public class ProteinUtils {
 		return protein2Map;
 	}
 	
-	/**
-	 * Resamples a dataset by applying the Synthetic Minority Oversampling TEchnique (SMOTE).
-	 * @param dataset dataset
-	 * @param percentage The percentage of SMOTE instances to create.
-	 * @param classValue The index of the class value to which SMOTE should be applied. Use a value of 0 to auto-detect the non-empty minority class.
-	 * @param nearestNeighbors The number of nearest neighbors to use.
-	 * @return resampled dataset
-	 * @throws Exception
-	 */
-	public static Instances smoteDataset(Instances dataset, double percentage, String classValue, int nearestNeighbors) throws Exception {
-		System.out.println("\n SMOTE dataset...");
-		SMOTE smote = new SMOTE();
-		smote.setClassValue("0");
-		smote.setNearestNeighbors(5);
-		smote.setPercentage(percentage);
-		smote.setRandomSeed((int)System.currentTimeMillis());
-		dataset = Resample.useFilter(dataset, smote);
-		return dataset;
-	}
 	
 	
 	public static int[] getPercentageResidueAccuracyPerProtein(List<Double> predictions, 
