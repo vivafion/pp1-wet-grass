@@ -87,6 +87,7 @@ public class Program2Testing {
 			debugPredictions(predictions, classification, proteinId2Class);
 			ProteinUtils.reEvaluate(proteinId2Class, classification);
 			//save the predictions in file
+			writeOutput(resultOutputPath, proteinId2Class);
 			SerializationHelper.write(resultOutputPath, proteinId2Class);
 			System.out.println("Predictions saved in " + resultOutputPath);
 			
@@ -95,6 +96,28 @@ public class Program2Testing {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	private static void writeOutput(String resultOutputPath2,
+			Map<String, String> proteinId2Class) {
+		FileWriter fstream;
+		for (String protein : proteinId2Class.keySet()){
+			try {
+				fstream = new FileWriter(resultOutputPath2 + protein +".fasta");
+				BufferedWriter out = new BufferedWriter(fstream);
+				out.write(protein);
+				out.newLine();
+				out.write(proteinId2Class.get(protein));
+				out.newLine();
+				out.close();
+				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+		
 	}
 
 	private static void debugPredictions(List<Double> predictions, double[] classification, Map<String, String> proteinId2Class) {
