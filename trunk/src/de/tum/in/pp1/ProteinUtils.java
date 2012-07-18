@@ -270,7 +270,7 @@ public class ProteinUtils {
 				}
 				
 				// if below 16 residues, throw it out
-				if (curEnd - curStart < 16){
+				if (curEnd - curStart < 4){
 					String tmp = proteins2Class.get(protein);
 					String start = tmp.substring(0,curStart);
 					String mid = "";
