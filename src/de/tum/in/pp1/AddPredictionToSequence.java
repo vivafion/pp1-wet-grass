@@ -15,6 +15,7 @@ public class AddPredictionToSequence {
 	 * Command line parameters:
 	 * 1. a path to the output dir of Program 2
 	 * 2. a path to the fasta files for which predictions are being made
+	 * 3. output directory
 	 * @param args
 	 */
 	public static void main(String[] args) {
