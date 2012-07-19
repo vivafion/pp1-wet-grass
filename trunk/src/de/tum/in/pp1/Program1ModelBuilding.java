@@ -1,39 +1,56 @@
 package de.tum.in.pp1;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.ArrayUtils;
 
+import weka.attributeSelection.ASEvaluation;
+import weka.attributeSelection.ASSearch;
+import weka.attributeSelection.AttributeSelection;
 import weka.attributeSelection.CfsSubsetEval;
+import weka.attributeSelection.ChiSquaredAttributeEval;
+import weka.attributeSelection.GainRatioAttributeEval;
 import weka.attributeSelection.GreedyStepwise;
+import weka.attributeSelection.InfoGainAttributeEval;
+import weka.attributeSelection.Ranker;
+import weka.attributeSelection.ReliefFAttributeEval;
 import weka.classifiers.AbstractClassifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.functions.LibSVM;
 import weka.classifiers.functions.SMO;
+import weka.classifiers.meta.GridSearch;
 import weka.core.Debug.Random;
 import weka.core.Instances;
 import weka.core.SerializationHelper;
 import weka.filters.Filter;
-import weka.filters.supervised.attribute.AttributeSelection;
 import weka.filters.supervised.instance.Resample;
+import weka.filters.unsupervised.attribute.Remove;
 
 /**
  * Program 1: Model Building and Parameter Optimization
  */
 public class Program1ModelBuilding {
 	
+	private static final int AUTO_ATRIB_SELECTION_THRESHOLD = 180;
 	private static String trainingSetPath = "";
 	//this is the path where the built classifier model is saved
 	private static String outputPath = "";
-	private static final double SUBSAMPLE_SIZE = 10.0; // percent
+	private static final double SUBSAMPLE_SIZE = 5.0; // percent
 	
 	//Sets the bias towards a uniform class. A value of 0 leaves the class distribution as-is, 
 	//a value of 1 ensures the class distributions are uniform in the output data.
-	private static final double BIAS_TO_UNIFORM_CLASS = 1.0;
+	private static final double BIAS_TO_UNIFORM_CLASS = 5.0;
 	private static final int FOLDS = 10;
 	private static final double SPLIT_PERCENTAGE = 66.0;
+	
+	//The sample size (in percent) to use in the initial grid search.
+	private static final int GRID_SEARCH_SAMPLE_SIZE = 3;
 	
 	
 /**
@@ -59,23 +76,25 @@ public class Program1ModelBuilding {
 	 		//Load the Protein dataset
 	 		data = ProteinUtils.loadDataset(trainingSetPath, true);
 			
-			//filtering
-	 		//we don't need the first string attribute
-	 		data = ProteinUtils.removeNotImportantAttributes(data);
+	 		
 			
 	 		//create subsample of the dataset
 	 		//data = resampleDataset(data);
 	 		
 	 		//randomly shuffle the dataset
-			//data = Utils.randomizeDataset(data);
+			//Instances subsample = resampleDataset(data);
 			
 			
-			// feature reduction
-			//data = filterImportantAttributes(data);
+			// automatic feature reduction. this method will select attributes and write the attributes that need to be removed in attribute_removed.txt
+			filterImportantAttributes(data);
 			
+	 		data = ProteinUtils.removeNotImportantAttributes(data);
+	 		
+			System.out.println(data.numAttributes());
 	 		long startTime = System.currentTimeMillis();
+	 		
 			 //create new instance of SVM
-	 		AbstractClassifier svmScheme = buildSVM(data);
+	 		AbstractClassifier svmScheme = buildOptimizedSVMUsingGridSearch(data);
 			 
 	 		long endTime = System.currentTimeMillis();
 	 		
@@ -121,20 +140,128 @@ public class Program1ModelBuilding {
 	 * @return instances without the less important attributes.
 	 * @throws Exception
 	 */
-	public static Instances filterImportantAttributes(Instances data) throws Exception {
+	public static void filterImportantAttributes(Instances data) throws Exception {
 		System.out.println("\n Select important attributes...");
-		AttributeSelection filter = new AttributeSelection();
-		CfsSubsetEval eval = new CfsSubsetEval();
-		GreedyStepwise search = new GreedyStepwise();
-		search.setSearchBackwards(true);//Added by Aparna on 04/06/2012  
-		filter.setEvaluator(eval);
-		filter.setSearch(search);
-		filter.setInputFormat(data);
-
-		// generate new data
-		Instances newData = Filter.useFilter(data, filter);
-		System.out.println("\n Number of selected attributes: " + newData.numAttributes()); 
-		return newData;
+		
+		//remove first attribute
+		String[] options = new String[2];
+		options[0] = "-R"; // "range"
+		options[1] = "1"; 
+		Remove remove = new Remove(); // new instance of filter
+		remove.setOptions(options); // set options
+		remove.setInputFormat(data); // inform filter about dataset **AFTER**
+		data = Filter.useFilter(data, remove); // apply filter
+		
+		
+		int[] ranking1;
+		int[] ranking2;
+		int[] ranking3;
+		int[] ranking4;
+		int[] ranking5;
+		
+		System.out.println("CfsSubsetEval -> generating ranking...");
+		AttributeSelection attSelector = new AttributeSelection();
+		ASEvaluation eval = new CfsSubsetEval();
+		ASSearch search = new GreedyStepwise();
+		((GreedyStepwise)search).setGenerateRanking(true);
+		attSelector.setEvaluator(eval);
+		attSelector.setSearch(search);
+		attSelector.SelectAttributes(data);
+		ranking1 = attSelector.selectedAttributes();
+		
+		System.out.println("ChiSquaredAttributeEval -> generating ranking...");
+		attSelector = new AttributeSelection();
+		eval = new ChiSquaredAttributeEval();
+		search = new Ranker();
+		((Ranker)search).setGenerateRanking(true);
+		attSelector.setEvaluator(eval);
+		attSelector.setSearch(search);
+		attSelector.SelectAttributes(data);
+		ranking2 = attSelector.selectedAttributes();
+		
+		System.out.println("GainRatioAttributeEval -> generating ranking...");
+		attSelector = new AttributeSelection();
+		eval = new GainRatioAttributeEval();
+		search = new Ranker();
+		((Ranker) search).setGenerateRanking(true);
+		attSelector.setEvaluator(eval);
+		attSelector.setSearch(search);
+		attSelector.SelectAttributes(data);
+		ranking3 = attSelector.selectedAttributes();
+		
+		System.out.println("InfoGainAttributeEval -> generating ranking...");
+		attSelector = new AttributeSelection();
+		eval = new InfoGainAttributeEval();
+		search = new Ranker();
+		((Ranker) search).setGenerateRanking(true);
+		attSelector.setEvaluator(eval);
+		attSelector.setSearch(search);
+		attSelector.SelectAttributes(data);
+		ranking4 = attSelector.selectedAttributes();
+		
+		System.out.println("ReliefFAttributeEval -> generating ranking...");
+		attSelector = new AttributeSelection();
+		eval = new ReliefFAttributeEval();
+		((ReliefFAttributeEval)eval).setSampleSize(2000);
+		search = new Ranker();
+		((Ranker) search).setGenerateRanking(true);
+		attSelector.setEvaluator(eval);
+		attSelector.setSearch(search);
+		attSelector.SelectAttributes(data);
+		ranking5 = attSelector.selectedAttributes();
+		
+		Map<Integer,Integer> attributeToScore = new HashMap<Integer, Integer>();
+		for (int i = 0; i < data.numAttributes(); i++) {
+			Integer currentScore = attributeToScore.get(ranking1[i]);
+			if (currentScore == null) {
+				currentScore = 0;
+			}
+			attributeToScore.put(ranking1[i], i + currentScore);
+			
+			currentScore = attributeToScore.get(ranking2[i]);
+			if (currentScore == null) {
+				currentScore = 0;
+			}
+			attributeToScore.put(ranking2[i], i + currentScore);
+			
+			currentScore = attributeToScore.get(ranking3[i]);
+			if (currentScore == null) {
+				currentScore = 0;
+			}
+			attributeToScore.put(ranking3[i], i + currentScore);
+			
+			currentScore = attributeToScore.get(ranking4[i]);
+			if (currentScore == null) {
+				currentScore = 0;
+			}
+			attributeToScore.put(ranking4[i], i + currentScore);
+			
+			currentScore = attributeToScore.get(ranking5[i]);
+			if (currentScore == null) {
+				currentScore = 0;
+			}
+			attributeToScore.put(ranking5[i], i + currentScore);
+		}
+		attributeToScore.remove(data.classIndex());
+		
+		FileWriter fstream;
+		fstream = new FileWriter("attributes_remove.txt");
+		BufferedWriter out = new BufferedWriter(fstream);
+		
+		int count = 0;
+		
+		for (Integer attr : attributeToScore.keySet()) {
+			Integer score = attributeToScore.get(attr);
+			if (score/5.0 > AUTO_ATRIB_SELECTION_THRESHOLD) {
+				out.write(data.attribute(attr).name());
+				out.newLine();
+				count++;
+			}
+		}
+		out.close();
+		fstream.close();
+		
+		//System.out.println("Automatic attribute selection: Selected " + count + " attributes");
 	}
 	
 	/**
@@ -152,6 +279,26 @@ public class Program1ModelBuilding {
 	}
 	
 	/**
+	 * Creates an LibSVM with optimized Cost and Gamma parameter for the given training set. It performs a Grid-Search for parameter optimization.
+	 * @param instances the training set
+	 * @return libsvm
+	 */
+	public static AbstractClassifier buildOptimizedSVMUsingGridSearch(Instances instances) {
+		System.out.println("GridSearch started...");
+		GridSearch gridSearch = new GridSearch();
+		try {
+			//gridSearch.setOptions(weka.core.Utils.splitOptions("weka.classifiers.meta.GridSearch -E ACC -y-property classifier.gamma -y-min -15.0 -y-max 5.0 -y-step 1.0 -y-base 2.0 -y-expression pow(BASE,I) -filter weka.filters.AllFilter -x-property classifier.cost -x-min -15.0 -x-max 15.0 -x-step 1.0 -x-base 2.0 -x-expression pow(BASE,I) -extend-grid -max-grid-extensions 3 -sample-size 1.0 -traversal COLUMN-WISE -log-file \"grid_search.txt\" -num-slots 1 -S 1 -W weka.classifiers.functions.LibSVM -- -S 0 -K 2 -D 3 -G 0.0 -R 0.0 -N 0.5 -M 40.0 -C 1.0 -E 0.0010 -P 0.1 "));
+			gridSearch.setOptions(weka.core.Utils.splitOptions("weka.classifiers.meta.GridSearch -E ACC -y-property classifier.gamma -y-min -15 -y-max 5.0 -y-step 1.0 -y-base 2.0 -y-expression pow(BASE,I) -filter weka.filters.AllFilter -x-property classifier.cost -x-min -15.0 -x-max 15.0 -x-step 1.0 -x-base 2.0 -x-expression pow(BASE,I) -extend-grid -max-grid-extensions 3 -sample-size "+GRID_SEARCH_SAMPLE_SIZE+" -traversal COLUMN-WISE -log-file \"grid_search.txt\" -num-slots 1 -S 1 -W weka.classifiers.functions.LibSVM -- -S 0 -K 2 -D 3 -G 0.0 -R 0.0 -N 0.5 -M 40.0 -C 1.0 -E 0.0010 -P 0.1 "));
+			//gridSearch.setClassifier(setupLibSVM());
+			gridSearch.buildClassifier(instances);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		//Classifier  c = gridSearch.getBestClassifier();
+		return gridSearch;
+	}
+	
+	/**
 	 * Creates new LibSVM and sets the options.
 	 * There are a lot of parameters to be adjusted for the SVM!!!
 	 * @return SVM that is still not trained
@@ -159,9 +306,9 @@ public class Program1ModelBuilding {
 	 */
 	public static LibSVM setupLibSVM() throws Exception{
 		LibSVM svmScheme = new weka.classifiers.functions.LibSVM();
-		// set options
+		// set options (-W \"0.95 0.05\")
 		svmScheme.setOptions(weka.core.Utils.splitOptions("weka.classifiers.functions.LibSVM -S 0 -K 2 -D 3 -G 0.0 -R 0.0 -N 0.5 -M 40.0 -C 4870.0 -E 0.0009765625 -P 0.1"));
-		svmScheme.setProbabilityEstimates(true);
+		//svmScheme.setProbabilityEstimates(true);
 		return svmScheme;
 	}
 	
