@@ -17,27 +17,52 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 public class GeneratePredictMeArff {
 	
 	public static void main(String[] args) {
+		if (args.length < 1) {
+			System.out.println("Missing arguments. Proper Usage is: java -jar WetGrassScriptCall.jar [propertyFilePath]");
+	        System.exit(0);
+		}
+		String pathOfDataset=args[0];
+		System.out.println("Creating Training arff");
+		
+		generateARFF(pathOfDataset, true);
+		System.out.println("Now creating testing arff (overwrite)");
+		
+		
+		generateARFF(pathOfDataset, false);
+		System.out.println("Finished");
+
+		
+	}
+		
+	
+	
+		public static void mainBU(String[] args){
+		
+		
 		
 		String propertyFilePath = "";
-		String path1 = "";
-		String path2 = "";
-		String path3 = "";
-		String path4 = "";
-		String path5 = "";
-		String path6 = "";
+//		String path1 = "";
+//		String path2 = "";
+//		String path3 = "";
+//		String path4 = "";
+//		String path5 = "";
+//		String path6 = "";
 		String datasetPath = "";
-		String datasetFastaPath = "";
+//		String datasetFastaPath = "";
 		String predictProteinOutput = "";
-		String impOrSolFlag = "";
-		String trainingOrTestsetFlag = "";
+//		String impOrSolFlag = "";
+//		String trainingOrTestsetFlag = "";
 		String outputArffPath = "";
 		String PP2FeatureOutputFileName = "";
-		String PP2FeatureOutputFileNameTestset = "";
-		String testsetFastaPath = "";
-		String predictProteinTestsetOutput = "";
-		String testsetPath = "";
-		String testsetOutputArffPath = "";
+//		String PP2FeatureOutputFileNameTestset = "";
+//		String testsetFastaPath = "";
+//		String predictProteinTestsetOutput = "";
+//		String testsetPath = "";
+//		String testsetOutputArffPath = "";
 		String callPPFlag = "";
+		String isTraining = "";
+		String strucFolder = "";
+		String pp2features="";
 		Properties prop = new Properties();		
 		//path = "/mnt/opt/data/pp1_12_exercise/groups/wet_grass/executeScript.sh";
 	    
@@ -46,65 +71,85 @@ public class GeneratePredictMeArff {
 			System.out.println("Missing arguments. Proper Usage is: java -jar WetGrassScriptCall.jar [propertyFilePath]");
 	        System.exit(0);
 		}
-		
+		if (args.length < 2) {
+			System.out.println("Missing arguments. Proper Usage is: java -jar WetGrassScriptCall.jar [TestsetPath] [Modeloutput]");
+	        System.exit(0);
+		}
 	 
 		try {
 			/** propertyFilePath = path of the paths.property file provided as argument from command line*/
 			propertyFilePath = args[0];
-		
+			propertyFilePath = "paths.properties";
+			datasetPath = args[0];
+			String outputName= args[1];
+			
+			
+			
+			
             //load a properties file
 			prop.load(new FileInputStream(propertyFilePath));
 			
 			//get the property value
-			path1 = prop.getProperty("script1Path");//path of callPredictProtein.sh
-			path2 = prop.getProperty("script2Path");//path of parseTMnonTM.pl
-			path3 = prop.getProperty("script3Path");//path of pp2features.py
-			datasetPath = prop.getProperty("datasetPath");//path of dataset
-			datasetFastaPath = prop.getProperty("datasetFastaPath");//path of dataset till fasta folder. arg[0] for callPredictProtein.sh
+//			path1 = prop.getProperty("script1Path");//path of callPredictProtein.sh
+//			path2 = prop.getProperty("script2Path");//path of parseTMnonTM.pl
+			pp2features = prop.getProperty("pp2features");//path of pp2features.py
+//			datasetPath = prop.getProperty("datasetPath");//path of dataset
+//			datasetFastaPath = prop.getProperty("datasetFastaPath");//path of dataset till fasta folder. arg[0] for callPredictProtein.sh
 			predictProteinOutput = prop.getProperty("predictProteinOutput");//path of the output files from PredictProtein, arg[1] for callPredictProtein.sh
-			impOrSolFlag = prop.getProperty("impOrSolFlag");//value of arg[2] for callPredictProtein.sh
-			trainingOrTestsetFlag = prop.getProperty("trainingOrTestsetFlag");//1 to generate arff for trainingset and 0 to generate arff for testset
+//			impOrSolFlag = prop.getProperty("impOrSolFlag");//value of arg[2] for callPredictProtein.sh
+//			trainingOrTestsetFlag = prop.getProperty("trainingOrTestsetFlag");//1 to generate arff for trainingset and 0 to generate arff for testset
 			outputArffPath = prop.getProperty("outputArffPath");//path of where the arff file will be generated ; arg[2] while calling parseTMnonTM.pl and
 			callPPFlag = prop.getProperty("callPPFlag");// true if PredictProtein script is called else false
 			PP2FeatureOutputFileName = prop.getProperty("PP2FeatureOutputFileName");//file name of training arff file
+
 			//for testing
-			testsetFastaPath = prop.getProperty("testsetFastaPath");//path of fasta files for testing, arg[0] for callPredictProtein.sh
-			predictProteinTestsetOutput = prop.getProperty("predictProteinTestsetOutput");//output path for predictProtein ;arg[1] for callPredictProtein.sh
-			testsetPath = prop.getProperty("testsetPath");//path of test dataset 
-			testsetOutputArffPath = prop.getProperty("testsetOutputArffPath");//path of where the arff file will be generated for testset; arg[2] while calling parseTMnonTM.pl 
+//			testsetFastaPath = prop.getProperty("testsetFastaPath");//path of fasta files for testing, arg[0] for callPredictProtein.sh
+//			predictProteinTestsetOutput = prop.getProperty("predictProteinTestsetOutput");//output path for predictProtein ;arg[1] for callPredictProtein.sh
+//			testsetPath = prop.getProperty("testsetPath");//path of test dataset 
+//			testsetOutputArffPath = prop.getProperty("testsetOutputArffPath");//path of where the arff file will be generated for testset; arg[2] while calling parseTMnonTM.pl 
+			isTraining = prop.getProperty("isTraining", "true");
 			
 			
-			boolean boolTrainSet=trainingOrTestsetFlag.equalsIgnoreCase("1");
+			
+			boolean boolTrainSet=isTraining.equalsIgnoreCase("true");
 			boolean boolCallPP=callPPFlag.equalsIgnoreCase("true");
-			boolean boolUseImpSolFiles=impOrSolFlag.equalsIgnoreCase("1");
+//			boolean boolUseImpSolFiles=impOrSolFlag.equalsIgnoreCase("1");
+			boolean boolUseImpSolFiles=false;		
+			
 			
 			
 			//run scripts to get the training set arff file
-			if(trainingOrTestsetFlag.equalsIgnoreCase("1")){
+		//	if(boolTrainSet){
 				if(boolCallPP){
+					System.out.println("PredicProtein is called...");
+						
 					//call script1: callPredictProtein.sh to run PredictProtein
 //					path1 = path1 +" "+ datasetFastaPath+" "+ predictProteinOutput+ " "+impOrSolFlag;
 					//Runtime.getRuntime().exec(path1);
 //					executeScript(path1);
-					callPP(datasetFastaPath, boolUseImpSolFiles, predictProteinOutput);
+					callPP(datasetPath, boolTrainSet, predictProteinOutput);
 					
-					System.out.println("script1 executed...");
+					System.out.println("PredicProtein calculations done.");
 				}
+				
 				//call script2: parseTMnonTM.pl to generate Prot files
 //				path2 = "perl "+path2+" " +trainingOrTestsetFlag+ " " +predictProteinOutput+" "+datasetPath;
 				//Runtime.getRuntime().exec(path2);
 //				executeScript(path2);
-				
+				System.out.println("Creating TMState .arff file(s)...");
 				parseTMnonTM(predictProteinOutput, datasetPath, boolTrainSet);
-				System.out.println("script2 executed...");
+				System.out.println("TMState .arff file(s) created.");
 				
 				//call script3: pp2features.py to run PP2Features and generate output arff file
 				//path3 = "python " +path3 +" -a prot.arff --arff-file "+PP2FeatureOutputFileName+" -p "+outputArffPath+" -f sampleConfig.cfg -e error.txt";
-				path3 = "python " +path3 +" -a prot.arff --arff-file "+outputArffPath+PP2FeatureOutputFileName+" -p "+predictProteinOutput+" -f sampleConfig.cfg -e error.txt";
-				executeScript(path3);
-				System.out.println("script3 executed...");
-				System.out.println("....trainingset output arff is generated...");
-		     }else{	
+				System.out.println("Beginning to call pp2features to merge all data...");
+				String pp2featuresCall = "python " +pp2features +" -a prot.arff --arff-file "+outputArffPath+PP2FeatureOutputFileName+" -p "+predictProteinOutput+" -f sampleConfig.cfg -e error.txt";
+				executeScript(pp2featuresCall);
+				
+				System.out.println(".arff file created.");
+				
+				System.out.println("Please call \"Program1 "+outputArffPath+PP2FeatureOutputFileName+" "+outputName);
+		    /* } else{	
 				//run scripts to get the testing set arff file
 		    	if(boolCallPP){
 			    	 //call script1: callPredictProtein.sh to run PredictProtein
@@ -113,7 +158,9 @@ public class GeneratePredictMeArff {
 //					executeScript(path4);
 					
 					System.out.println("script1 executed for testing set...");
-		    	}	
+		    	}
+		    	
+		    	
 					
 				//call script2: parseTMnonTM.pl to generate Prot files
 //				path5 = "perl "+path2+" " +trainingOrTestsetFlag+ " " +predictProteinTestsetOutput +" " +testsetPath;
@@ -128,7 +175,7 @@ public class GeneratePredictMeArff {
 				System.out.println("script3 executed for testset...");
 				System.out.println("....testingset output arff is generated...");
 		     }
-			
+			*/
  	     } catch (IOException ex) {
  	    	 ex.printStackTrace();
  	     }
@@ -136,6 +183,156 @@ public class GeneratePredictMeArff {
 
 	}
 
+	
+	public static String generateARFF(String pathOfDataset, boolean isTrain){
+		String propertyFilePath = "";
+//		String path1 = "";
+//		String path2 = "";
+//		String path3 = "";
+//		String path4 = "";
+//		String path5 = "";
+//		String path6 = "";
+		String datasetPath = "";
+//		String datasetFastaPath = "";
+		String predictProteinOutput = "";
+//		String impOrSolFlag = "";
+//		String trainingOrTestsetFlag = "";
+		String outputArffPath = "";
+		String PP2FeatureOutputFileName = "";
+//		String PP2FeatureOutputFileNameTestset = "";
+//		String testsetFastaPath = "";
+//		String predictProteinTestsetOutput = "";
+//		String testsetPath = "";
+//		String testsetOutputArffPath = "";
+		String callPPFlag = "";
+		String isTraining = "";
+		String strucFolder = "";
+		String pp2features="";
+		Properties prop = new Properties();		
+		//path = "/mnt/opt/data/pp1_12_exercise/groups/wet_grass/executeScript.sh";
+	    
+		//check the command line parameters
+		
+		
+	 
+		try {
+			/** propertyFilePath = path of the paths.property file provided as argument from command line*/
+			
+			propertyFilePath = "paths.properties";
+			datasetPath = pathOfDataset;
+			String outputName= "MISSING";
+			
+			
+			
+			
+            //load a properties file
+			prop.load(new FileInputStream(propertyFilePath));
+			
+			//get the property value
+//			path1 = prop.getProperty("script1Path");//path of callPredictProtein.sh
+//			path2 = prop.getProperty("script2Path");//path of parseTMnonTM.pl
+			pp2features = prop.getProperty("pp2features");//path of pp2features.py
+//			datasetPath = prop.getProperty("datasetPath");//path of dataset
+//			datasetFastaPath = prop.getProperty("datasetFastaPath");//path of dataset till fasta folder. arg[0] for callPredictProtein.sh
+			predictProteinOutput = prop.getProperty("predictProteinOutput");//path of the output files from PredictProtein, arg[1] for callPredictProtein.sh
+//			impOrSolFlag = prop.getProperty("impOrSolFlag");//value of arg[2] for callPredictProtein.sh
+//			trainingOrTestsetFlag = prop.getProperty("trainingOrTestsetFlag");//1 to generate arff for trainingset and 0 to generate arff for testset
+			outputArffPath = prop.getProperty("outputArffPath");//path of where the arff file will be generated ; arg[2] while calling parseTMnonTM.pl and
+			callPPFlag = prop.getProperty("callPPFlag");// true if PredictProtein script is called else false
+			PP2FeatureOutputFileName = prop.getProperty("PP2FeatureOutputFileName");//file name of training arff file
+
+			//for testing
+//			testsetFastaPath = prop.getProperty("testsetFastaPath");//path of fasta files for testing, arg[0] for callPredictProtein.sh
+//			predictProteinTestsetOutput = prop.getProperty("predictProteinTestsetOutput");//output path for predictProtein ;arg[1] for callPredictProtein.sh
+//			testsetPath = prop.getProperty("testsetPath");//path of test dataset 
+//			testsetOutputArffPath = prop.getProperty("testsetOutputArffPath");//path of where the arff file will be generated for testset; arg[2] while calling parseTMnonTM.pl 
+			isTraining = prop.getProperty("isTraining", "true");
+			
+			
+			
+			boolean boolTrainSet=isTrain;
+			boolean boolCallPP=callPPFlag.equalsIgnoreCase("true");
+//			boolean boolUseImpSolFiles=impOrSolFlag.equalsIgnoreCase("1");
+			boolean boolUseImpSolFiles=false;		
+			
+			
+			
+			//run scripts to get the training set arff file
+		//	if(boolTrainSet){
+				if(boolCallPP){
+					System.out.println("PredicProtein is called...");
+						
+					//call script1: callPredictProtein.sh to run PredictProtein
+//					path1 = path1 +" "+ datasetFastaPath+" "+ predictProteinOutput+ " "+impOrSolFlag;
+					//Runtime.getRuntime().exec(path1);
+//					executeScript(path1);
+					callPP(datasetPath, boolTrainSet, predictProteinOutput);
+					
+					System.out.println("PredicProtein calculations done.");
+				}
+				
+				//call script2: parseTMnonTM.pl to generate Prot files
+//				path2 = "perl "+path2+" " +trainingOrTestsetFlag+ " " +predictProteinOutput+" "+datasetPath;
+				//Runtime.getRuntime().exec(path2);
+//				executeScript(path2);
+				System.out.println("Creating TMState .arff file(s)...");
+				parseTMnonTM(predictProteinOutput, datasetPath, boolTrainSet);
+				System.out.println("TMState .arff file(s) created.");
+				
+				//call script3: pp2features.py to run PP2Features and generate output arff file
+				//path3 = "python " +path3 +" -a prot.arff --arff-file "+PP2FeatureOutputFileName+" -p "+outputArffPath+" -f sampleConfig.cfg -e error.txt";
+				System.out.println("Beginning to call pp2features to merge all data...");
+				String pp2featuresCall = "python " +pp2features +" -a prot.arff --arff-file "+outputArffPath+PP2FeatureOutputFileName+" -p "+predictProteinOutput+" -f sampleConfig.cfg -e error.txt";
+				executeScript(pp2featuresCall);
+				
+				System.out.println(".arff file created.");
+				
+				System.out.println("Please call \"Program1 "+outputArffPath+PP2FeatureOutputFileName+" "+outputName);
+				
+				
+				
+				
+		    /* } else{	
+				//run scripts to get the testing set arff file
+		    	if(boolCallPP){
+			    	 //call script1: callPredictProtein.sh to run PredictProtein
+//					path4 = path1 +" "+ testsetFastaPath+" "+ predictProteinTestsetOutput+ " "+impOrSolFlag;
+					callPP(testsetFastaPath, boolUseImpSolFiles, predictProteinTestsetOutput);
+//					executeScript(path4);
+					
+					System.out.println("script1 executed for testing set...");
+		    	}
+		    	
+		    	
+					
+				//call script2: parseTMnonTM.pl to generate Prot files
+//				path5 = "perl "+path2+" " +trainingOrTestsetFlag+ " " +predictProteinTestsetOutput +" " +testsetPath;
+//				executeScript(path5);
+		    	
+		    	parseTMnonTM(predictProteinTestsetOutput, testsetPath, boolTrainSet);
+				System.out.println("script2 executed for testing set...");
+				
+				//call script3: pp2features.py to run PP2Features and generate output arff file
+				path6 = "python " +path3 +" -a prot.arff --arff-file "+testsetOutputArffPath+PP2FeatureOutputFileName+" -p "+predictProteinTestsetOutput+" -f sampleConfig.cfg -e error.txt";
+				executeScript(path6);
+				System.out.println("script3 executed for testset...");
+				System.out.println("....testingset output arff is generated...");
+		     }
+			*/
+ 	     } catch (IOException ex) {
+ 	    	 ex.printStackTrace();
+ 	     }
+		String returnValue=outputArffPath+PP2FeatureOutputFileName;
+		return returnValue;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
 	/**Method to execute Bash Script*/
 	private static void executeScript(String path) {
         try {
@@ -204,24 +401,30 @@ public class GeneratePredictMeArff {
 	
 	private static void callPPInner(String path, String outputPath){
 		File[] files = new File(path).listFiles();
-		System.out.println(path);
+//		System.out.println(path);
 		
 		for (File file : files) {
 	        if (file.isFile()) {
 	        	String fileName=file.getName();
-	            System.out.println("File found: " + fileName+"        concatenated: "+path+fileName);
 	            
-	            
-	            File folder = new File(outputPath+file.getName());
-	            try{
-		            if(folder.mkdir()){
-		            System.out.println("Directory Created");
-		            }else{
-		            System.out.println("Directory creation failed");}
-	            }catch(Exception e){
-	            	e.printStackTrace();
-	            } 
-	            executeScript("/usr/bin/predictprotein --seqfile "+path+fileName+" --target=all --target=optional --output-dir "+outputPath+fileName+"/"+" --nouse-cache --bigblastdb=/var/tmp/rost_db/data/big/big --big80blastdb=/var/tmp/rost_db/data/big/big_80 --pfam2db=/var/tmp/rost_db/data/pfam_legacy/Pfam_ls --pfam3db=/var/tmp/rost_db/data/pfam/Pfam-A.hmm --prositeconvdat=/var/tmp/rost_db/data/prosite/prosite_convert.dat --prositedat=/var/tmp/rost_db/data/prosite/prosite.dat --swissblastdb=/var/tmp/rost_db/data/swissprot/uniprot_sprot");
+	            if (file.getName().endsWith(".fasta")&&file.isFile()){
+	            	System.out.println("Fasta file found: "+path+fileName+", calling PP");
+		            
+	            	String fileNameWithoutEnding=fileName.substring(0, fileName.length()-6);
+		            File folder = new File(outputPath+fileNameWithoutEnding);
+		            
+		            try{
+			            if(folder.mkdir()){
+			            System.out.println("Directory Created");
+			            }else{
+			            System.out.println("Directory creation failed");}
+		            }catch(Exception e){
+		            	e.printStackTrace();
+		            } 
+
+		            executeScript("/usr/bin/predictprotein --seqfile "+path+fileName+" --target=all --target=optional --output-dir "+outputPath+fileNameWithoutEnding+"/"+" --nouse-cache");
+//	        --bigblastdb=/var/tmp/rost_db/data/big/big --big80blastdb=/var/tmp/rost_db/data/big/big_80 --pfam2db=/var/tmp/rost_db/data/pfam_legacy/Pfam_ls --pfam3db=/var/tmp/rost_db/data/pfam/Pfam-A.hmm --prositeconvdat=/var/tmp/rost_db/data/prosite/prosite_convert.dat --prositedat=/var/tmp/rost_db/data/prosite/prosite.dat --swissblastdb=/var/tmp/rost_db/data/swissprot/uniprot_sprot"
+	            }
 	        }
 	    }
 	}
@@ -235,7 +438,7 @@ public class GeneratePredictMeArff {
 		for (File folder : files) {
 	        if (folder.isDirectory()) {
 	        	String folderName=folder.getName();
-	            System.out.println("File found: " + folderName+"        concatenated: "+folderWithSubfolders+folderName);
+	            System.out.println("Subfolder found: " + folderName);
 	            
 	            
 	            
@@ -256,7 +459,7 @@ public class GeneratePredictMeArff {
 	            	  boolean foundStruc=false;
 	            	  if (trainSet){
 	            		  
-	            		  System.out.println("Testing for structure: "+strucFolder+folder.getName()+".fasta");
+//	            		  System.out.println("Testing for structure: "+strucFolder+folder.getName()+".fasta");
 	            		  File tester=new File(strucFolder+folder.getName()+".fasta");
 	            		  if (tester.exists()){
 	            			  System.out.println("Structure exists, reading structure from file"+strucFolder+folder.getName()+".fasta");
@@ -265,13 +468,13 @@ public class GeneratePredictMeArff {
 			            	  DataInputStream inRealTM = new DataInputStream(realTMStateFile);
 			            	  BufferedReader brReal = new BufferedReader(new InputStreamReader(inRealTM));
 			            	  currentLine= brReal.readLine();
-			            	  System.out.println("Line 1: "+currentLine);
+//			            	  System.out.println("Line 1: "+currentLine);
 			            	  currentLine= brReal.readLine();
-			            	  System.out.println("Line 2: "+currentLine);
+//			            	  System.out.println("Line 2: "+currentLine);
 			            	  currentLine= brReal.readLine(); 
-			            	  System.out.println("Line 3: "+currentLine);
+//			            	  System.out.println("Line 3: "+currentLine);
 			            	  currentLine= brReal.readLine(); 
-			            	  System.out.println("Line 4: "+currentLine);
+//			            	  System.out.println("Line 4: "+currentLine);
 			            	  foundStruc=true;
 	            		  }
 	            		  
@@ -302,13 +505,13 @@ public class GeneratePredictMeArff {
 //	            	  System.out.println (strLine);
 	            	  }
 	            	  in.close();
-	            	  System.out.println("Complete Sequence was: "+sequence);
+//	            	  System.out.println("Complete Sequence was: "+sequence);
 	            	  for (int i=0; i<sequence.length();i++){
 	            		  if(!trainSet){
 	            			  out.write(i+",?\n");
 	            		  } else {
 	            			  if (foundStruc){
-		            			  if (currentLine.charAt(i)=='H'){
+		            			  if (currentLine.charAt(i)=='H'||currentLine.charAt(i)=='L'){
 		            				  out.write(i+",+\n");
 		            			  } else {
 		            				  out.write(i+",-\n");
