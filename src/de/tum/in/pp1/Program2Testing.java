@@ -61,7 +61,7 @@ public class Program2Testing {
 			//load trained model
 			AbstractClassifier svmScheme = loadModel(modelPath);
 
-			String arffFilePath = "D:\\pp1_dataset\\allFiles_testing_ordered_small.arff";//PredictProteinRunner.generateARFF(testingSetPath, false);
+			String arffFilePath = PredictProteinRunner.generateARFF(testingSetPath, false);
 			
 			//Read testing dataset
 			//testingData = ProteinUtils.loadDataset(testingSetPath, false);
