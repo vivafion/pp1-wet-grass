@@ -41,21 +41,21 @@ public class Program1ModelBuilding {
 	private static String trainingSetPath = "";
 	//this is the path where the built classifier model is saved
 	private static String outputPath = "";
-	private static final double SUBSAMPLE_SIZE = 5.0; // percent
+	private static final double SUBSAMPLE_SIZE = 1.0; // percent
 	
 	//Sets the bias towards a uniform class. A value of 0 leaves the class distribution as-is, 
 	//a value of 1 ensures the class distributions are uniform in the output data.
-	private static final double BIAS_TO_UNIFORM_CLASS = 5.0;
+	private static final double BIAS_TO_UNIFORM_CLASS = 1.0;
 	private static final int FOLDS = 10;
 	private static final double SPLIT_PERCENTAGE = 66.0;
 	
 	//The sample size (in percent) to use in the initial grid search.
-	private static final int GRID_SEARCH_SAMPLE_SIZE = 3;
+	private static final int GRID_SEARCH_SAMPLE_SIZE = 10;
 	
 	
 /**
  *  Command line params:
- *  1. a path to the training set
+ *  1. a path to the training set (fasta files)
  *  2. a path to the output file/folder
  * @param args
  */
@@ -70,11 +70,13 @@ public class Program1ModelBuilding {
 		outputPath = args[1];
 		
 		
+		String arffFilePath = PredictProteinRunner.generateARFF(trainingSetPath, true);
+		
 		Instances data = null;
 	 	try {
 	 		
 	 		//Load the Protein dataset
-	 		data = ProteinUtils.loadDataset(trainingSetPath, true);
+	 		data = ProteinUtils.loadDataset(arffFilePath, true);
 			
 	 		
 			
@@ -82,7 +84,7 @@ public class Program1ModelBuilding {
 	 		//data = resampleDataset(data);
 	 		
 	 		//randomly shuffle the dataset
-			//Instances subsample = resampleDataset(data);
+	 		data = ProteinUtils.randomizeDataset(data);
 			
 			
 			// automatic feature reduction. this method will select attributes and write the attributes that need to be removed in attribute_removed.txt
@@ -287,8 +289,8 @@ public class Program1ModelBuilding {
 		System.out.println("GridSearch started...");
 		GridSearch gridSearch = new GridSearch();
 		try {
-			//gridSearch.setOptions(weka.core.Utils.splitOptions("weka.classifiers.meta.GridSearch -E ACC -y-property classifier.gamma -y-min -15.0 -y-max 5.0 -y-step 1.0 -y-base 2.0 -y-expression pow(BASE,I) -filter weka.filters.AllFilter -x-property classifier.cost -x-min -15.0 -x-max 15.0 -x-step 1.0 -x-base 2.0 -x-expression pow(BASE,I) -extend-grid -max-grid-extensions 3 -sample-size 1.0 -traversal COLUMN-WISE -log-file \"grid_search.txt\" -num-slots 1 -S 1 -W weka.classifiers.functions.LibSVM -- -S 0 -K 2 -D 3 -G 0.0 -R 0.0 -N 0.5 -M 40.0 -C 1.0 -E 0.0010 -P 0.1 "));
-			gridSearch.setOptions(weka.core.Utils.splitOptions("weka.classifiers.meta.GridSearch -E ACC -y-property classifier.gamma -y-min -15 -y-max 5.0 -y-step 1.0 -y-base 2.0 -y-expression pow(BASE,I) -filter weka.filters.AllFilter -x-property classifier.cost -x-min -15.0 -x-max 15.0 -x-step 1.0 -x-base 2.0 -x-expression pow(BASE,I) -extend-grid -max-grid-extensions 3 -sample-size "+GRID_SEARCH_SAMPLE_SIZE+" -traversal COLUMN-WISE -log-file \"grid_search.txt\" -num-slots 1 -S 1 -W weka.classifiers.functions.LibSVM -- -S 0 -K 2 -D 3 -G 0.0 -R 0.0 -N 0.5 -M 40.0 -C 1.0 -E 0.0010 -P 0.1 "));
+			gridSearch.setOptions(weka.core.Utils.splitOptions("weka.classifiers.meta.GridSearch -E ACC -y-property classifier.gamma -y-min -15 -y-max 5.0 -y-step 1.0 -y-base 2.0 -y-expression pow(BASE,I) -filter weka.filters.AllFilter -x-property classifier.cost -x-min -15.0 -x-max 15.0 -x-step 1.0 -x-base 2.0 -x-expression pow(BASE,I) -extend-grid -max-grid-extensions 6 -sample-size 10 -traversal COLUMN-WISE -log-file \"grid_search.txt\" -num-slots 1 -S 1 -W weka.classifiers.functions.LibSVM -- -S 0 -K 2 -D 3 -G 0.0 -R 0.0 -N 0.5 -M 40.0 -C 1.0 -E 0.0010 -P 0.1 "));
+			gridSearch.setSampleSizePercent(GRID_SEARCH_SAMPLE_SIZE);
 			//gridSearch.setClassifier(setupLibSVM());
 			gridSearch.buildClassifier(instances);
 		} catch (Exception e) {
