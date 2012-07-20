@@ -93,15 +93,21 @@ public class PredictProteinRunner {
 //			datasetPath = prop.getProperty("datasetPath");//path of dataset
 //			datasetFastaPath = prop.getProperty("datasetFastaPath");//path of dataset till fasta folder. arg[0] for callPredictProtein.sh
 			predictProteinOutput = prop.getProperty("predictProteinOutput");//path of the output files from PredictProtein, arg[1] for callPredictProtein.sh
+			if (!predictProteinOutput.endsWith("/")){
+				predictProteinOutput=predictProteinOutput+"/";
+			}
 //			impOrSolFlag = prop.getProperty("impOrSolFlag");//value of arg[2] for callPredictProtein.sh
 //			trainingOrTestsetFlag = prop.getProperty("trainingOrTestsetFlag");//1 to generate arff for trainingset and 0 to generate arff for testset
 //			outputArffPath = prop.getProperty("outputArffPath");//path of where the arff file will be generated ; arg[2] while calling parseTMnonTM.pl and
 			callPPFlag = prop.getProperty("callPPFlag");// true if PredictProtein script is called else false
 			PP2FeatureOutputFile = prop.getProperty("PP2FeatureOutputFile");//file name of training arff file
-
+			
 			//for testing
 //			testsetFastaPath = prop.getProperty("testsetFastaPath");//path of fasta files for testing, arg[0] for callPredictProtein.sh
 			predictProteinTestsetOutput = prop.getProperty("predictProteinTestsetOutput");//output path for predictProtein ;arg[1] for callPredictProtein.sh
+			if (!predictProteinTestsetOutput.endsWith("/")){
+				predictProteinTestsetOutput=predictProteinTestsetOutput+"/";
+			}
 //			testsetPath = prop.getProperty("testsetPath");//path of test dataset 
 //			testsetOutputArffPath = prop.getProperty("testsetOutputArffPath");//path of where the arff file will be generated for testset; arg[2] while calling parseTMnonTM.pl 
 //			isTraining = prop.getProperty("isTraining", "true");
