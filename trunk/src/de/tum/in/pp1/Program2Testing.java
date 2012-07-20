@@ -201,9 +201,9 @@ public class Program2Testing {
 		double[] predictions = eval.evaluateModel(svmScheme, testingData);
 		
 		List<Double> predictionList = Arrays.asList(ArrayUtils.toObject(predictions));
-		System.out.println(eval.toSummaryString("\nResults\n======\n", true));
-		System.out.println(eval.toClassDetailsString());
-		System.out.println(eval.toMatrixString());
+//		System.out.println(eval.toSummaryString("\nResults\n======\n", true));
+//		System.out.println(eval.toClassDetailsString());
+//		System.out.println(eval.toMatrixString());
 		return  predictionList;
 		
 	}
