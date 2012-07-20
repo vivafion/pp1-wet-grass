@@ -61,16 +61,17 @@ public class Program2Testing {
 			//load trained model
 			AbstractClassifier svmScheme = loadModel(modelPath);
 
-			String arffFilePath = PredictProteinRunner.generateARFF(testingSetPath, false);
+			String arffFilePath = "D:\\pp1_dataset\\allFiles_testing_ordered_small.arff";//PredictProteinRunner.generateARFF(testingSetPath, false);
 			
 			//Read testing dataset
 			//testingData = ProteinUtils.loadDataset(testingSetPath, false);
 			testingData = ProteinUtils.loadDataset(arffFilePath, true);
-			Map<String,String> proteinToTrueClass = ProteinUtils.getTestsetAsMap(testingData);
+
+			//Map<String,String> proteinToTrueClass = ProteinUtils.getTestsetAsMap(testingData); //TO BE REMOVED FOR NOT LABELED TESTSET
 			
 			//keep the first attribute - ids and positions of the amino acids
 			idAndPositionAtt = testingData.attribute(0);
-			classification = testingData.attributeToDoubleArray(testingData.numAttributes()-1);
+			//classification = testingData.attributeToDoubleArray(testingData.numAttributes()-1); //TO BE REMOVED FOR NOT LABELED TESTSET
 			
 			//we don't need the first string attribute for prediction
 			testingData = ProteinUtils.removeNotImportantAttributes(testingData);
@@ -78,13 +79,15 @@ public class Program2Testing {
 			//Predict
 			predictions = predictTestingSet(testingData, svmScheme);
 			
-			Map<String,String> proteinId2Class = ProteinUtils.postProcessPredictions(predictions, idAndPositionAtt, classification, svmScheme);
-			//int[] histogram = ProteinUtils.getPercentageResidueAccuracyPerProtein(predictions, idAndPositionAtt, classification,proteinId2Class);
-			float qok = ProteinUtils.calculateQok(proteinId2Class, proteinToTrueClass);
-			System.out.println("Qok=" + qok);
+			Map<String,String> proteinId2Class = ProteinUtils.postProcessPredictions(predictions, idAndPositionAtt, svmScheme);
+		
+			//int[] histogram = ProteinUtils.getPercentageResidueAccuracyPerProtein(predictions, idAndPositionAtt, classification,proteinId2Class); //TO BE REMOVED FOR NOT LABELED TESTSET
+			
+			//float qok = ProteinUtils.calculateQok(proteinId2Class, proteinToTrueClass); //TO BE REMOVED FOR NOT LABELED TESTSET
+			//System.out.println("Qok=" + qok); ////TO BE REMOVED FOR NOT LABELED TESTSET
 
 			//debugPredictions(predictions, classification, proteinId2Class);
-			ProteinUtils.reEvaluate(proteinId2Class, classification);
+			//ProteinUtils.reEvaluate(proteinId2Class, classification); //TO BE REMOVED FOR NOT LABELED TESTSET!
 			//save the predictions in file
 			writeOutput(resultOutputPath, proteinId2Class, testingSetPath);
 			//SerializationHelper.write(resultOutputPath, proteinId2Class);
