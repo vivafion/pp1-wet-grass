@@ -165,7 +165,7 @@ public class ProteinUtils {
 	 * prediction given with the first argument respectively 
 	 * @return a map containing of key/value pairs where the key is the protein id and the value is a string representing whether or not each AA is TM.
 	 */
-	public static Map<String, String> postProcessPredictions(List<Double> predictions, Attribute idsAndPosition, double[] classification, AbstractClassifier svmScheme) {
+	public static Map<String, String> postProcessPredictions(List<Double> predictions, Attribute idsAndPosition, AbstractClassifier svmScheme) {
 		
 		//TODO: this method is not completely implemented!
 		Map<String,String> proteins2Class = new LinkedHashMap<String,String>();
