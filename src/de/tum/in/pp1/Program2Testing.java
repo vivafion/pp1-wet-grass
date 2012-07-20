@@ -1,8 +1,13 @@
 package de.tum.in.pp1;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -26,17 +31,14 @@ public class Program2Testing {
 	private static String testingSetPath = "";
 	//the path where we write the output of the predictions
 	private static String resultOutputPath = "";
-	private static String trainingSetPath;
 	
 	
 	/**
 	 * The main method containing the main code.
 	 * Command line parameters:
 	 * 1. a path to an output of Program 1 (the SVM model)
-	 * 2. a path to the testing set
+	 * 2. a path to the testing set (fasta files)
 	 * 3. a path to the output file/folder.
-	 * 4. a path to the training set (optional)  why do we need training set?
- *
 	 * @param args
 	 */
 	public static void main(String[] args) {
@@ -49,11 +51,6 @@ public class Program2Testing {
 		testingSetPath = args[1];
 		resultOutputPath = args[2];
 		
-		//optional
-		if (args.length > 3){
-			trainingSetPath = args[3];
-		}
-		
 		Instances testingData;
 		List<Double> predictions;
 		Attribute idAndPositionAtt;
@@ -64,9 +61,11 @@ public class Program2Testing {
 			//load trained model
 			AbstractClassifier svmScheme = loadModel(modelPath);
 
+			String arffFilePath = PredictProteinRunner.generateARFF(testingSetPath, false);
+			
 			//Read testing dataset
 			//testingData = ProteinUtils.loadDataset(testingSetPath, false);
-			testingData = ProteinUtils.loadDataset(testingSetPath, true);
+			testingData = ProteinUtils.loadDataset(arffFilePath, true);
 			Map<String,String> proteinToTrueClass = ProteinUtils.getTestsetAsMap(testingData);
 			
 			//keep the first attribute - ids and positions of the amino acids
@@ -80,16 +79,17 @@ public class Program2Testing {
 			predictions = predictTestingSet(testingData, svmScheme);
 			
 			Map<String,String> proteinId2Class = ProteinUtils.postProcessPredictions(predictions, idAndPositionAtt, classification, svmScheme);
-			int[] histogram = ProteinUtils.getPercentageResidueAccuracyPerProtein(predictions, idAndPositionAtt, classification,proteinId2Class);
+			//int[] histogram = ProteinUtils.getPercentageResidueAccuracyPerProtein(predictions, idAndPositionAtt, classification,proteinId2Class);
 			float qok = ProteinUtils.calculateQok(proteinId2Class, proteinToTrueClass);
 			System.out.println("Qok=" + qok);
 
-			debugPredictions(predictions, classification, proteinId2Class);
+			//debugPredictions(predictions, classification, proteinId2Class);
 			ProteinUtils.reEvaluate(proteinId2Class, classification);
 			//save the predictions in file
-			writeOutput(resultOutputPath, proteinId2Class);
+			writeOutput(resultOutputPath, proteinId2Class, testingSetPath);
 			//SerializationHelper.write(resultOutputPath, proteinId2Class);
 			System.out.println("Predictions saved in " + resultOutputPath);
+			
 			
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -98,17 +98,36 @@ public class Program2Testing {
 		}
 	}
 
+	/**
+	 * Writes the predictions in new fasta files. The header and the sequence are taken from the original fasta files.
+	 * @param resultOutputPath2 the resulting directory where the new files will be written in
+	 * @param proteinId2Class the prediction map
+	 * @param testingSetPath the path of the original testing fasta files
+	 */
 	private static void writeOutput(String resultOutputPath2,
-			Map<String, String> proteinId2Class) {
+			Map<String, String> proteinId2Class, String testingSetPath) {
 		FileWriter fstream;
 		for (String protein : proteinId2Class.keySet()){
 			try {
-				System.out.println(resultOutputPath2);
-				System.out.println(protein);
+				//System.out.println(resultOutputPath2);
+				//System.out.println(protein);
 				fstream = new FileWriter(resultOutputPath2 +"\\" + protein +".fasta");
 				BufferedWriter out = new BufferedWriter(fstream);
-				out.write(">"+protein);
-				out.newLine();
+				
+				//read the header and the sequence from fasta file
+				  FileInputStream originalFastaFstream = new FileInputStream(testingSetPath + "\\" + protein + ".fasta");
+				  // Get the object of DataInputStream
+				  InputStream in = new DataInputStream(originalFastaFstream);
+				  BufferedReader br = new BufferedReader(new InputStreamReader(in));
+				  String sequence;
+				  //Read fasta file header+sequence
+				  sequence = br.readLine() + "\n";
+				  sequence += br.readLine() + "\n";
+				  //Close the input stream
+				  in.close();
+				
+				  
+				out.write(sequence);
 				out.write(proteinId2Class.get(protein));
 				out.newLine();
 				out.close();

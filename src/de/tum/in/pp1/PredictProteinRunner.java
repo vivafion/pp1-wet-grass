@@ -5,16 +5,22 @@
 package de.tum.in.pp1;
 
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Properties;
-
-import org.apache.commons.lang3.builder.EqualsBuilder;
 
 
 /**
  * This file calls the scripts to generate the arff files.
  * */
-public class GeneratePredictMeArff {
+public class PredictProteinRunner {
 	
 	public static void main(String[] args) {
 		if (args.length < 1) {
