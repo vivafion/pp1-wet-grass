@@ -42,10 +42,7 @@ public class PredictProteinRunner {
 		
 	
 	
-		public static void mainBU(String[] args){
-		
-		
-		
+		public static String generateARFF(String pathOfDataset, boolean isTrain){
 		String propertyFilePath = "";
 //		String path1 = "";
 //		String path2 = "";
@@ -58,161 +55,16 @@ public class PredictProteinRunner {
 		String predictProteinOutput = "";
 //		String impOrSolFlag = "";
 //		String trainingOrTestsetFlag = "";
-		String outputArffPath = "";
-		String PP2FeatureOutputFileName = "";
-//		String PP2FeatureOutputFileNameTestset = "";
+//		String outputArffPath = "";
+		String PP2FeatureOutputFile = "";
+		String PP2FeatureOutputFileTestset = "";
 //		String testsetFastaPath = "";
-//		String predictProteinTestsetOutput = "";
+		String predictProteinTestsetOutput = "";
 //		String testsetPath = "";
 //		String testsetOutputArffPath = "";
 		String callPPFlag = "";
-		String isTraining = "";
-		String strucFolder = "";
-		String pp2features="";
-		Properties prop = new Properties();		
-		//path = "/mnt/opt/data/pp1_12_exercise/groups/wet_grass/executeScript.sh";
-	    
-		//check the command line parameters
-		if (args.length < 1) {
-			System.out.println("Missing arguments. Proper Usage is: java -jar WetGrassScriptCall.jar [propertyFilePath]");
-	        System.exit(0);
-		}
-		if (args.length < 2) {
-			System.out.println("Missing arguments. Proper Usage is: java -jar WetGrassScriptCall.jar [TestsetPath] [Modeloutput]");
-	        System.exit(0);
-		}
-	 
-		try {
-			/** propertyFilePath = path of the paths.property file provided as argument from command line*/
-			propertyFilePath = args[0];
-			propertyFilePath = "paths.properties";
-			datasetPath = args[0];
-			String outputName= args[1];
-			
-			
-			
-			
-            //load a properties file
-			prop.load(new FileInputStream(propertyFilePath));
-			
-			//get the property value
-//			path1 = prop.getProperty("script1Path");//path of callPredictProtein.sh
-//			path2 = prop.getProperty("script2Path");//path of parseTMnonTM.pl
-			pp2features = prop.getProperty("pp2features");//path of pp2features.py
-//			datasetPath = prop.getProperty("datasetPath");//path of dataset
-//			datasetFastaPath = prop.getProperty("datasetFastaPath");//path of dataset till fasta folder. arg[0] for callPredictProtein.sh
-			predictProteinOutput = prop.getProperty("predictProteinOutput");//path of the output files from PredictProtein, arg[1] for callPredictProtein.sh
-//			impOrSolFlag = prop.getProperty("impOrSolFlag");//value of arg[2] for callPredictProtein.sh
-//			trainingOrTestsetFlag = prop.getProperty("trainingOrTestsetFlag");//1 to generate arff for trainingset and 0 to generate arff for testset
-			outputArffPath = prop.getProperty("outputArffPath");//path of where the arff file will be generated ; arg[2] while calling parseTMnonTM.pl and
-			callPPFlag = prop.getProperty("callPPFlag");// true if PredictProtein script is called else false
-			PP2FeatureOutputFileName = prop.getProperty("PP2FeatureOutputFileName");//file name of training arff file
-
-			//for testing
-//			testsetFastaPath = prop.getProperty("testsetFastaPath");//path of fasta files for testing, arg[0] for callPredictProtein.sh
-//			predictProteinTestsetOutput = prop.getProperty("predictProteinTestsetOutput");//output path for predictProtein ;arg[1] for callPredictProtein.sh
-//			testsetPath = prop.getProperty("testsetPath");//path of test dataset 
-//			testsetOutputArffPath = prop.getProperty("testsetOutputArffPath");//path of where the arff file will be generated for testset; arg[2] while calling parseTMnonTM.pl 
-			isTraining = prop.getProperty("isTraining", "true");
-			
-			
-			
-			boolean boolTrainSet=isTraining.equalsIgnoreCase("true");
-			boolean boolCallPP=callPPFlag.equalsIgnoreCase("true");
-//			boolean boolUseImpSolFiles=impOrSolFlag.equalsIgnoreCase("1");
-			boolean boolUseImpSolFiles=false;		
-			
-			
-			
-			//run scripts to get the training set arff file
-		//	if(boolTrainSet){
-				if(boolCallPP){
-					System.out.println("PredicProtein is called...");
-						
-					//call script1: callPredictProtein.sh to run PredictProtein
-//					path1 = path1 +" "+ datasetFastaPath+" "+ predictProteinOutput+ " "+impOrSolFlag;
-					//Runtime.getRuntime().exec(path1);
-//					executeScript(path1);
-					callPP(datasetPath, boolTrainSet, predictProteinOutput);
-					
-					System.out.println("PredicProtein calculations done.");
-				}
-				
-				//call script2: parseTMnonTM.pl to generate Prot files
-//				path2 = "perl "+path2+" " +trainingOrTestsetFlag+ " " +predictProteinOutput+" "+datasetPath;
-				//Runtime.getRuntime().exec(path2);
-//				executeScript(path2);
-				System.out.println("Creating TMState .arff file(s)...");
-				parseTMnonTM(predictProteinOutput, datasetPath, boolTrainSet);
-				System.out.println("TMState .arff file(s) created.");
-				
-				//call script3: pp2features.py to run PP2Features and generate output arff file
-				//path3 = "python " +path3 +" -a prot.arff --arff-file "+PP2FeatureOutputFileName+" -p "+outputArffPath+" -f sampleConfig.cfg -e error.txt";
-				System.out.println("Beginning to call pp2features to merge all data...");
-				String pp2featuresCall = "python " +pp2features +" -a prot.arff --arff-file "+outputArffPath+PP2FeatureOutputFileName+" -p "+predictProteinOutput+" -f sampleConfig.cfg -e error.txt";
-				executeScript(pp2featuresCall);
-				
-				System.out.println(".arff file created.");
-				
-				System.out.println("Please call \"Program1 "+outputArffPath+PP2FeatureOutputFileName+" "+outputName);
-		    /* } else{	
-				//run scripts to get the testing set arff file
-		    	if(boolCallPP){
-			    	 //call script1: callPredictProtein.sh to run PredictProtein
-//					path4 = path1 +" "+ testsetFastaPath+" "+ predictProteinTestsetOutput+ " "+impOrSolFlag;
-					callPP(testsetFastaPath, boolUseImpSolFiles, predictProteinTestsetOutput);
-//					executeScript(path4);
-					
-					System.out.println("script1 executed for testing set...");
-		    	}
-		    	
-		    	
-					
-				//call script2: parseTMnonTM.pl to generate Prot files
-//				path5 = "perl "+path2+" " +trainingOrTestsetFlag+ " " +predictProteinTestsetOutput +" " +testsetPath;
-//				executeScript(path5);
-		    	
-		    	parseTMnonTM(predictProteinTestsetOutput, testsetPath, boolTrainSet);
-				System.out.println("script2 executed for testing set...");
-				
-				//call script3: pp2features.py to run PP2Features and generate output arff file
-				path6 = "python " +path3 +" -a prot.arff --arff-file "+testsetOutputArffPath+PP2FeatureOutputFileName+" -p "+predictProteinTestsetOutput+" -f sampleConfig.cfg -e error.txt";
-				executeScript(path6);
-				System.out.println("script3 executed for testset...");
-				System.out.println("....testingset output arff is generated...");
-		     }
-			*/
- 	     } catch (IOException ex) {
- 	    	 ex.printStackTrace();
- 	     }
-	
-
-	}
-
-	
-	public static String generateARFF(String pathOfDataset, boolean isTrain){
-		String propertyFilePath = "";
-//		String path1 = "";
-//		String path2 = "";
-//		String path3 = "";
-//		String path4 = "";
-//		String path5 = "";
-//		String path6 = "";
-		String datasetPath = "";
-//		String datasetFastaPath = "";
-		String predictProteinOutput = "";
-//		String impOrSolFlag = "";
-//		String trainingOrTestsetFlag = "";
-		String outputArffPath = "";
-		String PP2FeatureOutputFileName = "";
-//		String PP2FeatureOutputFileNameTestset = "";
-//		String testsetFastaPath = "";
-//		String predictProteinTestsetOutput = "";
-//		String testsetPath = "";
-//		String testsetOutputArffPath = "";
-		String callPPFlag = "";
-		String isTraining = "";
-		String strucFolder = "";
+//		String isTraining = "";
+//		String strucFolder = "";
 		String pp2features="";
 		Properties prop = new Properties();		
 		//path = "/mnt/opt/data/pp1_12_exercise/groups/wet_grass/executeScript.sh";
@@ -226,7 +78,7 @@ public class PredictProteinRunner {
 			
 			propertyFilePath = "paths.properties";
 			datasetPath = pathOfDataset;
-			String outputName= "MISSING";
+			
 			
 			
 			
@@ -243,17 +95,18 @@ public class PredictProteinRunner {
 			predictProteinOutput = prop.getProperty("predictProteinOutput");//path of the output files from PredictProtein, arg[1] for callPredictProtein.sh
 //			impOrSolFlag = prop.getProperty("impOrSolFlag");//value of arg[2] for callPredictProtein.sh
 //			trainingOrTestsetFlag = prop.getProperty("trainingOrTestsetFlag");//1 to generate arff for trainingset and 0 to generate arff for testset
-			outputArffPath = prop.getProperty("outputArffPath");//path of where the arff file will be generated ; arg[2] while calling parseTMnonTM.pl and
+//			outputArffPath = prop.getProperty("outputArffPath");//path of where the arff file will be generated ; arg[2] while calling parseTMnonTM.pl and
 			callPPFlag = prop.getProperty("callPPFlag");// true if PredictProtein script is called else false
-			PP2FeatureOutputFileName = prop.getProperty("PP2FeatureOutputFileName");//file name of training arff file
+			PP2FeatureOutputFile = prop.getProperty("PP2FeatureOutputFile");//file name of training arff file
 
 			//for testing
 //			testsetFastaPath = prop.getProperty("testsetFastaPath");//path of fasta files for testing, arg[0] for callPredictProtein.sh
-//			predictProteinTestsetOutput = prop.getProperty("predictProteinTestsetOutput");//output path for predictProtein ;arg[1] for callPredictProtein.sh
+			predictProteinTestsetOutput = prop.getProperty("predictProteinTestsetOutput");//output path for predictProtein ;arg[1] for callPredictProtein.sh
 //			testsetPath = prop.getProperty("testsetPath");//path of test dataset 
 //			testsetOutputArffPath = prop.getProperty("testsetOutputArffPath");//path of where the arff file will be generated for testset; arg[2] while calling parseTMnonTM.pl 
-			isTraining = prop.getProperty("isTraining", "true");
-			
+//			isTraining = prop.getProperty("isTraining", "true");
+			PP2FeatureOutputFileTestset = prop.getProperty("PP2FeatureOutputFileTestset");//file name of training arff file
+	
 			
 			
 			boolean boolTrainSet=isTrain;
@@ -265,6 +118,11 @@ public class PredictProteinRunner {
 			
 			//run scripts to get the training set arff file
 		//	if(boolTrainSet){
+			if (!boolTrainSet){
+				predictProteinOutput=predictProteinTestsetOutput;
+				PP2FeatureOutputFile=PP2FeatureOutputFileTestset;
+			}
+			
 				if(boolCallPP){
 					System.out.println("PredicProtein is called...");
 						
@@ -288,12 +146,12 @@ public class PredictProteinRunner {
 				//call script3: pp2features.py to run PP2Features and generate output arff file
 				//path3 = "python " +path3 +" -a prot.arff --arff-file "+PP2FeatureOutputFileName+" -p "+outputArffPath+" -f sampleConfig.cfg -e error.txt";
 				System.out.println("Beginning to call pp2features to merge all data...");
-				String pp2featuresCall = "python " +pp2features +" -a prot.arff --arff-file "+outputArffPath+PP2FeatureOutputFileName+" -p "+predictProteinOutput+" -f sampleConfig.cfg -e error.txt";
+				String pp2featuresCall = "python " +pp2features +" -a prot.arff --arff-file "+PP2FeatureOutputFile+" -p "+predictProteinOutput+" -f sampleConfig.cfg -e error.txt";
 				executeScript(pp2featuresCall);
 				
 				System.out.println(".arff file created.");
 				
-				System.out.println("Please call \"Program1 "+outputArffPath+PP2FeatureOutputFileName+" "+outputName);
+				
 				
 				
 				
@@ -328,7 +186,7 @@ public class PredictProteinRunner {
  	     } catch (IOException ex) {
  	    	 ex.printStackTrace();
  	     }
-		String returnValue=outputArffPath+PP2FeatureOutputFileName;
+		String returnValue=PP2FeatureOutputFile;
 		return returnValue;
 	}
 	
