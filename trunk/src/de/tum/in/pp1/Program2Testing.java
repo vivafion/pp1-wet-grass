@@ -114,11 +114,11 @@ public class Program2Testing {
 			try {
 				//System.out.println(resultOutputPath2);
 				//System.out.println(protein);
-				fstream = new FileWriter(resultOutputPath2 +"\\" + protein +".fasta");
+				fstream = new FileWriter(resultOutputPath2 + '/' + protein +".fasta");
 				BufferedWriter out = new BufferedWriter(fstream);
 				
 				//read the header and the sequence from fasta file
-				  FileInputStream originalFastaFstream = new FileInputStream(testingSetPath + "\\" + protein + ".fasta");
+				  FileInputStream originalFastaFstream = new FileInputStream(testingSetPath + '/' + protein + ".fasta");
 				  // Get the object of DataInputStream
 				  InputStream in = new DataInputStream(originalFastaFstream);
 				  BufferedReader br = new BufferedReader(new InputStreamReader(in));
